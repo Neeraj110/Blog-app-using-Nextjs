@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { handleXaiSubmit } from "@/helper/Ai";
 
 function AskToAi() {
   const [query, setQuery] = useState("");
@@ -15,15 +14,20 @@ function AskToAi() {
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const chatContainerRef = useRef(null);
   const chatEndRef = useRef(null);
 
   const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [history]);
+  }, [history, loading]);
 
   const handleNewChat = () => {
     setHistory([]);
@@ -153,7 +157,7 @@ function AskToAi() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+    <div className="flex flex-col bg-gradient-to-b from-gray-900 to-black text-white h-dvh">
       {/* Header - fixed height */}
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-black/70 border-b border-gray-800 px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -182,9 +186,12 @@ function AskToAi() {
       </header>
 
       <div className="flex-1 flex justify-center overflow-hidden">
-        <div className="w-full max-w-4xl flex flex-col h-full">
+        <div className="w-full max-w-4xl flex flex-col">
           {/* Chat Section */}
-          <main className="flex-1 overflow-y-auto p-4 space-y-6">
+          <main
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto p-2 space-y-6 pb-24 md:pb-6"
+          >
             {history.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-4 md:p-8 md:mt-0 mt-[5rem] mb-8">
                 <div className="max-w-3xl w-full space-y-6 md:space-y-8">
@@ -232,11 +239,6 @@ function AskToAi() {
               </div>
             ) : (
               <>
-                {/* <div className="sticky top-0 bg-gradient-to-b from-black via-black/90 to-transparent pb-6 -mt-4 pt-4">
-                  <h2 className="text-lg font-medium text-gray-300">
-                    Conversation with AI
-                  </h2>
-                </div> */}
                 {history.map((item, index) => (
                   <div
                     key={index}
@@ -290,29 +292,29 @@ function AskToAi() {
                   </div>
                 )}
 
-                <div ref={chatEndRef} />
+                <div ref={chatEndRef} className="h-0" />
               </>
             )}
           </main>
 
-          {/* Input Section */}
-          <div className="border-t border-gray-800 bg-black/70 backdrop-blur-lg p-3 z-50 ">
+          {/* Input Section - Fixed to bottom with better mobile experience */}
+          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-black/70 backdrop-blur-lg p-3 z-50">
             <form
               onSubmit={handleQuerySubmit}
-              className="flex items-center gap-3 max-w-3xl mx-auto w-full"
+              className="flex items-center gap-3 max-w-3xl mx-auto w-full px-2"
             >
               <input
                 type="text"
                 placeholder="Message AI..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 bg-gray-800/50 text-white md:p-2 py-1 px-2 rounded-2xl outline-none border border-gray-700/50 focus:border-gray-600/50 transition-colors placeholder-gray-400"
+                className="flex-1 bg-gray-800/50 text-white p-2 rounded-2xl outline-none border border-gray-700/50 focus:border-gray-600/50 transition-colors placeholder-gray-400"
               />
               <Button
                 type="submit"
                 disabled={loading}
                 className={cn(
-                  "rounded-full md:w-10 md:h-10 w-8 h-8 flex items-center justify-center",
+                  "rounded-full w-10 h-10 flex items-center justify-center",
                   loading
                     ? "bg-gray-700/70"
                     : "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:opacity-90"
