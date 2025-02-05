@@ -1,0 +1,38 @@
+/* globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Set default background color to black */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Light mode theme */
+@layer base {
+  :root {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+  }
+
+  /* Dark mode can still apply the same black background */
+  .dark {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+  }
+}
