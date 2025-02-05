@@ -21,14 +21,6 @@ export async function POST(req) {
       );
     }
 
-    // Check for existing user by username
-    if (await User.findOne({ username })) {
-      return NextResponse.json(
-        { error: "Username already taken" },
-        { status: 400 }
-      );
-    }
-
     // Create a new user
     const newUser = await User.create({
       name,

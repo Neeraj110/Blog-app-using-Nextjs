@@ -1,25 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog"; // ShadCN Dialog
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"), // Name validation
@@ -35,10 +23,19 @@ function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: { name: "", email: "", password: "" },
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
   });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
 
   // Function to generate a unique username
   const generateUsername = (name, email) => {
@@ -46,28 +43,37 @@ function RegisterPage() {
     return `${emailPrefix}`;
   };
 
-  const onSubmit = async (values) => {
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    const validationResult = formSchema.safeParse(formData);
+
+    if (!validationResult.success) {
+      toast.error("Please check the form for errors.");
+      return;
+    }
+
     setIsLoading(true);
     try {
+      const { name, email, password } = formData;
       // Generate the username based on the name and email
-      const username = generateUsername(values.name, values.email);
+      const username = generateUsername(name, email);
 
       // Sending the registration data along with the generated username
       const response = await axios.post("/api/user/register", {
-        ...values,
+        name,
+        email,
+        password,
         username, // Include generated username
       });
       if (response.status === 200) {
-        setEmail(values.email);
+        setEmail(email);
         setIsModalOpen(true);
         toast.success("Registration successful! Please verify your email.");
       }
       setIsLoading(false);
     } catch (error) {
-      form.setError("root", {
-        message:
-          error.response?.data?.error || "Registration failed. Try again.",
-      });
+      toast.error(error.response?.data?.error || "Registration failed. Try again.");
+      setIsLoading(false);
     }
   };
 
@@ -97,91 +103,67 @@ function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen text-white">
+    <div className="flex items-center justify-center min-h-screen bg-black text-white">
       <div className="w-full max-w-md p-6 rounded-xl shadow-lg">
         <h2 className="text-3xl font-semibold text-center mb-6">Register</h2>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Name Field (Replaces the Username Field) */}
-            <FormField
-              control={form.control}
+        <form onSubmit={onSubmit} className="space-y-4">
+          {/* Name Field */}
+          <div className="space-y-1">
+            <label htmlFor="name" className="block text-sm">Name</label>
+            <input
+              id="name"
               name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter your name"
-                      {...field}
-                      className="rounded"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="text"
+              placeholder="Enter your name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="w-full p-2 rounded border bg-black"
             />
+          </div>
 
-            {/* Email Field */}
-            <FormField
-              control={form.control}
+          {/* Email Field */}
+          <div className="space-y-1">
+            <label htmlFor="email" className="block text-sm">Email</label>
+            <input
+              id="email"
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter your email"
-                      {...field}
-                      className="rounded"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full p-2 rounded border bg-black"
             />
+          </div>
 
-            {/* Password Field */}
-            <FormField
-              control={form.control}
+          {/* Password Field */}
+          <div className="space-y-1">
+            <label htmlFor="password" className="block text-sm">Password</label>
+            <input
+              id="password"
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      {...field}
-                      className="rounded"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="w-full p-2 rounded border bg-black"
             />
+          </div>
 
-            {form.formState.errors.root && (
-              <p className="text-red-500 text-sm">
-                {form.formState.errors.root.message}
-              </p>
+          <Button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-500"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="flex justify-center items-center">
+                <div className="w-4 h-4 border-2 border-t-white border-blue-300 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              "Register"
             )}
-
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex justify-center items-center">
-                  <div className="w-4 h-4 border-2 border-t-white border-blue-300 rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                "Register"
-              )}
-            </Button>
-          </form>
-        </Form>
+          </Button>
+        </form>
 
         {/* Modal for OTP Verification */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -193,12 +175,12 @@ function RegisterPage() {
               Enter the 6-digit OTP sent to {email}.
             </p>
             <div className="space-y-4">
-              <Input
+              <input
                 placeholder="Enter OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 maxLength={6}
-                className="rounded"
+                className="w-full p-2 rounded"
               />
               <Button
                 onClick={handleOtpVerification}
