@@ -37,10 +37,11 @@ function RegisterPage() {
     }));
   };
 
-  // Function to generate a unique username
   const generateUsername = (name, email) => {
     const emailPrefix = email.split("@")[0];
-    return `${emailPrefix}`;
+    // Remove any non-alphanumeric characters and replace them with underscores
+    const sanitizedUsername = emailPrefix.replace(/[^a-zA-Z0-9_]/g, "_");
+    return sanitizedUsername;
   };
 
   const onSubmit = async (e) => {
@@ -72,7 +73,9 @@ function RegisterPage() {
       }
       setIsLoading(false);
     } catch (error) {
-      toast.error(error.response?.data?.error || "Registration failed. Try again.");
+      toast.error(
+        error.response?.data?.error || "Registration failed. Try again."
+      );
       setIsLoading(false);
     }
   };
@@ -110,7 +113,9 @@ function RegisterPage() {
         <form onSubmit={onSubmit} className="space-y-4">
           {/* Name Field */}
           <div className="space-y-1">
-            <label htmlFor="name" className="block text-sm">Name</label>
+            <label htmlFor="name" className="block text-sm">
+              Name
+            </label>
             <input
               id="name"
               name="name"
@@ -124,7 +129,9 @@ function RegisterPage() {
 
           {/* Email Field */}
           <div className="space-y-1">
-            <label htmlFor="email" className="block text-sm">Email</label>
+            <label htmlFor="email" className="block text-sm">
+              Email
+            </label>
             <input
               id="email"
               name="email"
@@ -138,7 +145,9 @@ function RegisterPage() {
 
           {/* Password Field */}
           <div className="space-y-1">
-            <label htmlFor="password" className="block text-sm">Password</label>
+            <label htmlFor="password" className="block text-sm">
+              Password
+            </label>
             <input
               id="password"
               name="password"
