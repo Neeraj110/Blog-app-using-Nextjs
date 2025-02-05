@@ -36,27 +36,27 @@ const MobileNavigation = ({
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 z-50">
-      <div className="flex items-center justify-around px-1 py-1 relative">
+      <div className="flex items-center justify-around px-1 py-2 relative">
         <button onClick={() => navigate("/dashboard/content")} className="p-1">
           <Home
-            className={`h-5 w-5 ${
+            className={`h-6 w-6 ${
               pathname === "/dashboard/content" ? "font-bold" : "text-white"
             }`}
           />
         </button>
 
         <button className="p-1" onClick={onSearchClick}>
-          <Search className="h-5 w-5 text-white" />
+          <Search className="h-6 w-6 text-white" />
         </button>
         <button className="p-1" onClick={onPostClick}>
-          <PlusCircle className="h-5 w-5 text-white" />
+          <PlusCircle className="h-6 w-6 text-white" />
         </button>
         <button
           onClick={() => navigate("/dashboard/notifications")}
           className="p-1"
         >
           <Bell
-            className={`h-5 w-5 ${
+            className={`h-6 w-6 ${
               pathname === "/dashboard/notifications"
                 ? "font-bold"
                 : "text-white"
@@ -67,7 +67,7 @@ const MobileNavigation = ({
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <button className="p-1">
-              <MoreVertical className="h-5 w-5 text-white" />
+              <MoreVertical className="h-6 w-6 text-white" />
             </button>
           </SheetTrigger>
 
@@ -80,14 +80,14 @@ const MobileNavigation = ({
                 onClick={() => navigate("/dashboard/profile")}
                 className="flex items-center gap-2 p-2 hover:bg-gray-800 rounded-lg w-full text-left"
               >
-                <User className="h-5 w-5" />
+                <User className="h-6 w-6" />
                 <span>Profile</span>
               </button>
               <button
                 onClick={() => navigate("/dashboard/ai")}
                 className="flex items-center gap-2 p-2 hover:bg-gray-800 rounded-lg w-full text-left"
               >
-                <Brain className="h-5 w-5" />
+                <Brain className="h-6 w-6" />
                 <span>AskToAi</span>
               </button>
               <button
@@ -97,7 +97,7 @@ const MobileNavigation = ({
                 }}
                 className="flex items-center gap-2 p-2 hover:bg-gray-800 rounded-lg w-full text-left"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-6 w-6" />
                 <span>Logout</span>
               </button>
             </div>
