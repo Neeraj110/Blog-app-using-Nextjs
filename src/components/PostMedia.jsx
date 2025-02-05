@@ -8,8 +8,6 @@ const PostMedia = ({ media, isPriority = false }) => {
       ? "grid-cols-1"
       : media.length === 2
       ? "grid-cols-2"
-      : media.length === 3
-      ? "grid-cols-2"
       : "grid-cols-2";
 
   return (
@@ -19,24 +17,33 @@ const PostMedia = ({ media, isPriority = false }) => {
       {media.map((item, index) => (
         <div
           key={item._id}
-          className={`relative w-full h-full rounded-lg overflow-hidden
+          className={`relative w-full rounded-lg overflow-hidden
             ${media.length === 3 && index === 0 ? "row-span-2" : ""}
             ${
               media.length === 1
                 ? "max-h-[300px] sm:max-h-[512px]"
                 : "max-h-[200px] sm:max-h-[256px]"
             }`}
-          style={{ aspectRatio: item.aspectRatio }}
+          style={{ aspectRatio: item.aspectRatio?.toString() }}
         >
-          <Image
-            src={item.url}
-            alt="Post content"
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-            priority={isPriority && index === 0}
-            loading={isPriority && index === 0 ? "eager" : "lazy"}
-          />
+          {item.type === "video" ? (
+            <video
+              src={item.url}
+              poster={item.thumbnail}
+              controls
+              className="object-contain w-full h-[90%]"
+            />
+          ) : (
+            <Image
+              src={item.url}
+              alt="Post content"
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+              priority={isPriority && index === 0}
+              loading={isPriority && index === 0 ? "eager" : "lazy"}
+            />
+          )}
         </div>
       ))}
     </div>
