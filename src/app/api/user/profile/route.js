@@ -1,7 +1,5 @@
-
 import { connectDB } from "@/lib/connectDB";
 import { User } from "@/models/user.model";
-import { Post } from "@/models/post.model";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 
