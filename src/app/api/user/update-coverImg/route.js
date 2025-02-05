@@ -1,4 +1,4 @@
-import connectDB from "@/lib/connectDB";
+import {connectDB} from "@/lib/connectDB";
 import { User } from "@/models/user.model";
 import { deleteFromCloudinary } from "@/lib/cloudinary"; // Assuming you have a Cloudinary utility
 import { NextResponse } from "next/server";
