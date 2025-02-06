@@ -20,7 +20,7 @@ const MAX_MEDIA_FILES = 3;
 export async function PATCH(req, { params }) {
   try {
     const userId = req.headers.get("userid");
-    const { id } = params;
+    const { id } = await params;
 
     // Validate user authentication
     if (!userId) {
@@ -53,15 +53,14 @@ export async function PATCH(req, { params }) {
     if (post.owner.toString() !== userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        {
-          status: 403,
-        }
+        { status: 403 }
       );
     }
 
     // Get and validate form data
     const body = await req.formData();
     const content = body.get("content")?.trim() || "";
+    const existingMedia = JSON.parse(body.get("existingMedia") || "[]");
     const files = body.getAll("media");
     const tags = (body.get("tags")?.split(",") || []).map((tag) =>
       tag.trim().toLowerCase()
@@ -84,7 +83,7 @@ export async function PATCH(req, { params }) {
         { status: 400 }
       );
     }
-    if (files.length > MAX_MEDIA_FILES) {
+    if (files.length + existingMedia.length > MAX_MEDIA_FILES) {
       return NextResponse.json(
         {
           success: false,
@@ -94,13 +93,15 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    // Remove old media from Cloudinary if new files are uploaded
-    if (files.length > 0) {
-      if (post.media && post.media.length > 0) {
-        for (const media of post.media) {
-          if (media.url) {
-            await deleteFromCloudinary(media.url);
-          }
+    // Remove deleted media from Cloudinary
+    if (post.media && post.media.length > 0) {
+      const mediaToDelete = post.media.filter(
+        oldMedia => !existingMedia.some(media => media.url === oldMedia.url)
+      );
+      
+      for (const media of mediaToDelete) {
+        if (media.url) {
+          await deleteFromCloudinary(media.url);
         }
       }
     }
@@ -146,9 +147,9 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    // Update post
+    // Update post with both existing and new media
     post.content = content;
-    post.media = mediaUploads.length > 0 ? mediaUploads : post.media;
+    post.media = [...existingMedia, ...mediaUploads];
     post.tags = tags;
     post.visibility = visibility;
 

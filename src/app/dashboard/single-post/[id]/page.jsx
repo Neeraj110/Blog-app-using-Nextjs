@@ -7,12 +7,14 @@ import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import EditPostModal from "@/components/EditPostModal";
 
 function SinglePost() {
   const { id } = useParams();
   const router = useRouter();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const fetchSinglePost = async () => {
     try {
@@ -58,6 +60,7 @@ function SinglePost() {
           post={post}
           isSinglePost={true}
           fetchPosts={fetchSinglePost}
+          setEditModalOpen={setEditModalOpen}
         />
       </div>
 
@@ -104,6 +107,13 @@ function SinglePost() {
           <p className="text-gray-500 text-center py-4">No replies yet</p>
         )}
       </div>
+
+      <EditPostModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        post={post}
+        fetchPosts={fetchSinglePost}
+      />
     </div>
   );
 }

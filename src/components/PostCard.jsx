@@ -40,11 +40,17 @@ import {
   toggleBookmarkPost,
   deletePost,
 } from "@/helper/postHelpers";
-import SinglePost from "@/app/dashboard/single-post/[id]/page";
+// import SinglePost from "@/app/dashboard/single-post/[id]/page";
 import { handlefetchProfile } from "@/helper/followActions";
 
 const PostCard = memo(
-  ({ post, isPriority = false, fetchPosts, isSinglePost }) => {
+  ({
+    post,
+    isPriority = false,
+    fetchPosts,
+    isSinglePost,
+    setEditModalOpen,
+  }) => {
     const { userInfo } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const router = useRouter();
@@ -86,7 +92,11 @@ const PostCard = memo(
     };
 
     const handleEditPost = () => {
-      router.push(`/post/edit/${post._id}`);
+      if (setEditModalOpen) {
+        setEditModalOpen(true);
+      } else {
+        router.push(`/dashboard/single-post/${post._id}`);
+      }
     };
     const isPostOwner = userInfo?._id === post.owner._id;
 

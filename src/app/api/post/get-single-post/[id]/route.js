@@ -7,8 +7,8 @@ import { NextResponse } from "next/server";
 export async function GET(req, { params }) {
   try {
     // Validate user
+    const { id } = await params;
     const { success, error, status } = await validateUser(req);
-    const { id } = params;
 
     if (!success) {
       return NextResponse.json({ success, error }, { status });

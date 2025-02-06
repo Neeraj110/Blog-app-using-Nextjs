@@ -7,16 +7,15 @@ import { User } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setCredential } from "@/redux/slices/authSlice";
 import { handleFollow } from "@/helper/followActions";
-import { useRouter } from "next/navigation"; // Import the useRouter hook
+import { useRouter } from "next/navigation";
 
 function UserCard({ user, mobile, onClose }) {
   const { userInfo } = useSelector((state) => state.auth);
   const [imgError, setImgError] = useState(false);
   const dispatch = useDispatch();
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Check if the user is already being followed
   useEffect(() => {
     const following = userInfo?.following?.some(
       (followedUser) => followedUser._id === user._id
@@ -34,14 +33,40 @@ function UserCard({ user, mobile, onClose }) {
     setIsFollowing(newStatus);
   };
 
-  const avatarUrl =
-    user.avatar ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`;
+  const getInitials = (name) => {
+    return name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
-  // Handle user profile navigation
   const handleProfileClick = () => {
     router.push(`/dashboard/userProfile/${user._id}`);
-    onClose();
+    if (onClose) onClose();
+  };
+
+  const renderAvatar = () => {
+    if (user.avatar) {
+      return (
+        <Image
+          src={user.avatar}
+          alt={user.name}
+          fill
+          sizes="40px"
+          className="rounded-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      );
+    }
+
+    // Fallback to initials when no avatar or error
+    return (
+      <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
+        {getInitials(user.name)}
+      </div>
+    );
   };
 
   return (
@@ -51,18 +76,11 @@ function UserCard({ user, mobile, onClose }) {
         className="relative w-10 h-10 flex-shrink-0 cursor-pointer"
       >
         {imgError ? (
-          <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
-            <User className="w-6 h-6 text-gray-400" />
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
+            {getInitials(user.name)}
           </div>
         ) : (
-          <Image
-            src={avatarUrl}
-            alt={user.name}
-            fill
-            sizes="40px"
-            className="rounded-full object-cover"
-            onError={() => setImgError(true)}
-          />
+          renderAvatar()
         )}
       </div>
       <div
@@ -74,7 +92,7 @@ function UserCard({ user, mobile, onClose }) {
           <p className="text-gray-400 text-sm truncate">@{user.username}</p>
         )}
       </div>
-      {!mobile === true ? (
+      {!mobile && (
         <Button
           onClick={followBtn}
           variant="outline"
@@ -84,8 +102,6 @@ function UserCard({ user, mobile, onClose }) {
         >
           {isFollowing ? "Unfollow" : "Follow"}
         </Button>
-      ) : (
-        ""
       )}
     </div>
   );
