@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/connectDB";
 import { User } from "@/models/user.model";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { cacheService } from "@/helper/cacheData";
 
 export async function GET(req) {
   try {
@@ -13,12 +14,14 @@ export async function GET(req) {
       );
     }
 
-    // Connect to the database
+    // Try cache first
+    const cachedProfile = cacheService.getUserProfile(userId);
+    if (cachedProfile) {
+      return NextResponse.json({ user: cachedProfile });
+    }
+
     await connectDB();
-
     const objectId = new mongoose.Types.ObjectId(userId);
-
-    // Execute aggregation pipeline
     const [userProfile] = await User.aggregate([
       // Match the specific user
       { $match: { _id: objectId } },
@@ -191,6 +194,9 @@ export async function GET(req) {
     if (!userProfile) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    // Cache the profile
+    cacheService.setUserProfile(userId, userProfile);
 
     return NextResponse.json({ user: userProfile });
   } catch (error) {

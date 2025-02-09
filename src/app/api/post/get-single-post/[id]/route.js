@@ -2,22 +2,28 @@ import { Post } from "@/models/post.model";
 import { connectDB } from "@/lib/connectDB";
 import { validateUser } from "@/helper/validateUser";
 import { NextResponse } from "next/server";
+import { cacheService } from "@/helper/cacheData";
 
-// api/post/get-single-post/[id]
 export async function GET(req, { params }) {
   try {
-    // Validate user
-    const { id } = await params;
+    const { id } = params;
     const { success, error, status } = await validateUser(req);
 
     if (!success) {
       return NextResponse.json({ success, error }, { status });
     }
 
-    // Connect to the database
-    await connectDB();
+    // Try cache first
+    const cachedPost = cacheService.getPost(id);
+    if (cachedPost) {
+      return NextResponse.json({
+        success: true,
+        data: cachedPost,
+        fromCache: true,
+      });
+    }
 
-    // Fetch single post
+    await connectDB();
     const post = await Post.findById(id)
       .select(
         "content media owner likes comments visibility engagement createdAt"
@@ -27,29 +33,23 @@ export async function GET(req, { params }) {
         path: "comments",
         populate: {
           path: "user",
-          select: "name username avatar", // Fetch user details for each comment
+          select: "name username avatar",
         },
-        select: "comment content media user createdAt", // Select comment-specific fields
+        select: "comment content media user createdAt",
       })
       .lean();
 
     if (!post) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Post not found",
-        },
+        { success: false, error: "Post not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: post,
-      },
-      { status: 200 }
-    );
+    // Cache the post
+    cacheService.setPost(id, post);
+
+    return NextResponse.json({ success: true, data: post });
   } catch (error) {
     console.error("Error fetching single post:", error.message);
     return NextResponse.json(

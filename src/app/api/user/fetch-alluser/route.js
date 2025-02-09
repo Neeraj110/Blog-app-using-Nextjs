@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { User } from "@/models/user.model";
 import { connectDB } from "@/lib/connectDB";
+import { cacheService } from "@/helper/cacheData";
 
 export async function GET(req) {
   try {
     const userid = req.headers.get("userid");
-
     if (!userid) {
       return NextResponse.json(
         { error: "Unauthorized - User ID is required" },
@@ -13,19 +13,26 @@ export async function GET(req) {
       );
     }
 
-    // Connect to database
-    await connectDB();
+    // Try cache first with error handling
+    const cachedUsers = cacheService.getUsersList();
+    if (cachedUsers && Array.isArray(cachedUsers)) {
+      return NextResponse.json({
+        success: true,
+        message: "Users fetched from cache",
+        count: cachedUsers.length,
+        users: cachedUsers,
+        fromCache: true
+      });
+    }
 
-    // Verify the requesting user exists
+    await connectDB();
     const currentUser = await User.findById(userid);
     if (!currentUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Fetch all users except the current user
     const allUsers = await User.find(
       { _id: { $ne: userid } },
-
       {
         _id: 1,
         username: 1,
@@ -33,24 +40,30 @@ export async function GET(req) {
         avatar: 1,
         name: 1,
       }
-    ).sort({ createdAt: -1 }); // Sort by newest first (optional)
+    ).lean().sort({ createdAt: -1 });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Users fetched successfully",
-        count: allUsers.length,
-        users: allUsers,
-      },
-      { status: 200 }
-    );
+    // Cache the results with validation
+    if (allUsers && Array.isArray(allUsers)) {
+      const cacheSuccess = cacheService.setUsersList(allUsers);
+      if (!cacheSuccess) {
+        console.warn("Failed to cache users list");
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Users fetched successfully",
+      count: allUsers.length,
+      users: allUsers,
+      fromCache: false
+    });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
-      {
-        success: false,
+      { 
+        success: false, 
         error: "An error occurred while fetching users",
-        message: error.message,
+        message: error.message 
       },
       { status: 500 }
     );

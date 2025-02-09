@@ -2,11 +2,10 @@ import { Post } from "@/models/post.model";
 import { connectDB } from "@/lib/connectDB";
 import { validateUser } from "@/helper/validateUser";
 import { NextResponse } from "next/server";
+import { cacheService } from "@/helper/cacheData";
 
-// GET /api/post/get-following-post
 export async function GET(req) {
   try {
-    // Validate user with specific fields needed
     const { success, user, error, status } = await validateUser(req, {
       select: "following",
     });
@@ -15,20 +14,26 @@ export async function GET(req) {
       return NextResponse.json({ success, error }, { status });
     }
 
+    // Try cache first
+    const cachedPosts = cacheService.getFollowingPosts(user._id);
+    if (cachedPosts) {
+      return NextResponse.json({
+        success: true,
+        data: cachedPosts,
+        fromCache: true,
+      });
+    }
+
     await connectDB();
 
     if (!user.following?.length) {
-      return NextResponse.json(
-        {
-          success: true,
-          data: [],
-          message: "No following users to fetch posts from",
-        },
-        { status: 200 }
-      );
+      return NextResponse.json({
+        success: true,
+        data: [],
+        message: "No following users to fetch posts from",
+      });
     }
 
-    // Fetch posts
     const posts = await Post.find({
       owner: { $in: user.following },
       visibility: "public",
@@ -40,13 +45,10 @@ export async function GET(req) {
       .populate("owner", "username avatar name")
       .lean();
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: posts,
-      },
-      { status: 200 }
-    );
+    // Cache the results
+    cacheService.setFollowingPosts(user._id, posts);
+
+    return NextResponse.json({ success: true, data: posts });
   } catch (error) {
     console.error("Error fetching posts from following users:", error.message);
     return NextResponse.json(
