@@ -10,8 +10,10 @@ const cache = new NodeCache({
 
 // Cache key generators
 const generateUserCacheKey = (type, id = "") => `user:${type}:${id}`;
-const generatePostCacheKey = (type, id = "", visibility = "public") => 
+const generatePostCacheKey = (type, id = "", visibility = "public") =>
   `post:${type}:${visibility}:${id || "anonymous"}`;
+const generateSearchCacheKey = (searchTerm, userId) =>
+  `user:search:${searchTerm}:${userId}`;
 
 // Set up cache event handlers
 cache.on("expired", (key, value) => {
@@ -30,40 +32,44 @@ export const cacheService = {
   flush: () => cache.flushAll(),
 
   // User methods
-  getUserProfile: (userId) => cache.get(generateUserCacheKey("profile", userId)),
-  setUserProfile: (userId, data) => cache.set(generateUserCacheKey("profile", userId), data, 300),
+  getUserProfile: (userId) =>
+    cache.get(generateUserCacheKey("profile", userId)),
+  setUserProfile: (userId, data) =>
+    cache.set(generateUserCacheKey("profile", userId), data, 300),
   getUsersList: () => cache.get(generateUserCacheKey("list")),
   setUsersList: (data) => cache.set(generateUserCacheKey("list"), data, 300),
 
   // Post methods
-  getAllPosts: (userId, visibility) => 
+  getAllPosts: (userId, visibility) =>
     cache.get(generatePostCacheKey("all", userId, visibility)),
-  setAllPosts: (userId, visibility, data, ttl = 300) => 
+  setAllPosts: (userId, visibility, data, ttl = 300) =>
     cache.set(generatePostCacheKey("all", userId, visibility), data, ttl),
   getPost: (postId) => cache.get(generatePostCacheKey("single", postId)),
-  setPost: (postId, data) => cache.set(generatePostCacheKey("single", postId), data, 300),
-  getFollowingPosts: (userId) => cache.get(generatePostCacheKey("following", userId)),
-  setFollowingPosts: (userId, data) => cache.set(generatePostCacheKey("following", userId), data, 180),
+  setPost: (postId, data) =>
+    cache.set(generatePostCacheKey("single", postId), data, 300),
+  getFollowingPosts: (userId) =>
+    cache.get(generatePostCacheKey("following", userId)),
+  setFollowingPosts: (userId, data) =>
+    cache.set(generatePostCacheKey("following", userId), data, 180),
 
   // Search methods
-  getSearchResults: (searchTerm, userId) => 
-    cache.get(generateUserCacheKey(`search:${searchTerm}:${userId}`)),
-  setSearchResults: (searchTerm, userId, data) => 
-    cache.set(generateUserCacheKey(`search:${searchTerm}:${userId}`), data, 180),
-
+  getSearchResults: (searchTerm, userId) =>
+    cache.get(generateSearchCacheKey(searchTerm, userId)),
+  setSearchResults: (searchTerm, userId, data) =>
+    cache.set(generateSearchCacheKey(searchTerm, userId), data, 180),
   // Cache invalidation
   invalidateUserCache: (userId) => {
     const keys = [
       generateUserCacheKey("profile", userId),
       generateUserCacheKey("list"),
-      generatePostCacheKey("following", userId)
+      generatePostCacheKey("following", userId),
     ];
-    keys.forEach(key => cache.del(key));
+    keys.forEach((key) => cache.del(key));
   },
 
   invalidatePostCache: (postId) => {
     cache.del(generatePostCacheKey("single", postId));
-    cache.keys().forEach(key => {
+    cache.keys().forEach((key) => {
       if (key.startsWith("post:")) {
         cache.del(key);
       }

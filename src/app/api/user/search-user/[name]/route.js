@@ -1,14 +1,12 @@
+// app/api/user/search-user/[name]/route.js
 import { User } from "@/models/user.model";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/connectDB";
-import { validateUser } from "@/helper/validateUser";
-import { headers } from "next/headers";
 import { cacheService } from "@/helper/cacheData";
 
-// GET /api/user/search-user/:name
 export async function GET(request, { params }) {
   try {
-    const { name } = params;
+    const { name } = await params;
     const userId = request.headers.get("userid");
 
     // Validate user ID
@@ -16,21 +14,6 @@ export async function GET(request, { params }) {
       return NextResponse.json(
         { error: "Unauthorized - User ID is required" },
         { status: 401 }
-      );
-    }
-
-    // Check cache first
-    const cachedResults = cacheService.getSearchResults(name, userId);
-    if (cachedResults) {
-      return NextResponse.json(
-        {
-          success: true,
-          message: "Users fetched from cache",
-          count: cachedResults.length,
-          users: cachedResults,
-          fromCache: true,
-        },
-        { status: 200 }
       );
     }
 
@@ -45,11 +28,18 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Perform search
+    // Perform search with improved query
     const users = await User.find(
       {
-        name: { $regex: name, $options: "i" },
-        _id: { $ne: userId },
+        $and: [
+          {
+            $or: [
+              { name: { $regex: name, $options: "i" } },
+              { username: { $regex: name, $options: "i" } },
+            ],
+          },
+          { _id: { $ne: userId } },
+        ],
       },
       {
         _id: 1,
@@ -61,20 +51,16 @@ export async function GET(request, { params }) {
     ).limit(50);
 
     // Cache the results
-    cacheService.setSearchResults(name, userId, users);
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Users fetched successfully",
-        count: users.length,
-        users,
-        fromCache: false,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: "Users fetched successfully",
+      count: users.length,
+      users,
+      fromCache: false,
+    });
   } catch (error) {
-    console.error("Error fetching users:", error);
+    console.error("Error in search-user route:", error);
     return NextResponse.json(
       {
         success: false,

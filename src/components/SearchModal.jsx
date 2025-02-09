@@ -1,5 +1,3 @@
-// components/modals/SearchModal.jsx
-"use client";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useDebounce } from "@/helper/useDebounced";
 import UserCard from "@/components/userCard";
 import axios from "axios";
@@ -52,14 +50,14 @@ const SearchModal = ({ isOpen, onClose }) => {
   const userList = useMemo(() => {
     if (loading) {
       return (
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="animate-pulse">
-              <div className="flex items-center space-x-2 p-2">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <div className="flex-1 space-y-1">
-                  <Skeleton className="h-3 w-20 rounded" />
-                  <Skeleton className="h-2 w-28 rounded" />
+              <div className="flex items-center space-x-3 p-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-24 rounded" />
+                  <Skeleton className="h-3 w-32 rounded" />
                 </div>
               </div>
             </div>
@@ -75,78 +73,43 @@ const SearchModal = ({ isOpen, onClose }) => {
     }
 
     return (
-      <div className="text-center py-4">
-        <p className="text-gray-400 text-sm">No users found</p>
+      <div className="flex flex-col items-center justify-center py-8 px-4">
+        <p className="text-gray-400 text-base text-center">No users found</p>
       </div>
     );
-  }, [users, loading]);
+  }, [users, loading, onClose]);
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="h-[80vh] w-[80%] max-w-[600px] overflow-y-auto rounded-3xl md:rounded-3xl bg-gradient-to-br from-gray-900 to-black text-white  shadow-xl border border-gray-800">
-          <DialogHeader>
-            <DialogTitle>Search Users</DialogTitle>
-            <DialogClose className="absolute right-4 top-4" />
-          </DialogHeader>
-
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Search..."
-            className="  text-white mb-4 p-3 rounded-3xl md:rounded-3xl bg-gradient-to-br from-gray-600 to-black   shadow-xl border border-gray-500"
-          />
-          {/* 
-          <div className="overflow-y-auto max-h-[65vh]">
-            {loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center space-x-3">
-                    <Skeleton className="w-10 h-10 rounded-full" />
-                    <Skeleton className="w-3/4 h-4" />
-                  </div>
-                ))}
-              </div>
-            ) : users.length > 0 ? (
-              <div className="space-y-2">
-                {users.map((user) => (
-                  <div
-                    key={user._id}
-                    className="flex items-center space-x-2 p-2 rounded-[10px] bg-gray-900 border hover:bg-gray-700 transition"
-                  >
-                    <img
-                      src={
-                        user.avatar ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user.name
-                        )}`
-                      }
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <div>
-                      <p className="text-white">{user.name}</p>
-                      <p className="text-gray-400 text-sm">@{user.username}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400 text-center">No users found</p>
-            )}
-          </div> */}
-
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            <div className="px-3 py-2">
-              <h2 className="text-lg font-bold text-white mb-2">
-                Who to follow
-              </h2>
-              <div className="space-y-1">{userList}</div>
-            </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="h-[100vh] w-full max-w-full md:h-[80vh] md:w-[80%] md:max-w-[600px] p-0 overflow-hidden rounded-none md:rounded-3xl bg-gradient-to-br from-gray-900 to-black text-white shadow-xl border-0 md:border md:border-gray-800">
+        <DialogHeader className="px-4 py-3 md:px-6 md:py-4 border-b border-gray-800">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-lg md:text-xl font-bold">
+              Search Users
+            </DialogTitle>
+            <DialogClose className="p-2 hover:bg-gray-800 rounded-full transition-colors"></DialogClose>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          <div className="relative mt-3">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Search users..."
+              className="pl-10 pr-4 py-2 h-12 text-base md:text-lg w-full rounded-2xl bg-gray-800/50 border-gray-700 focus:border-gray-600 focus:ring-1 focus:ring-gray-600 placeholder:text-gray-500"
+            />
+          </div>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="px-4 py-3 md:px-6">
+            <h2 className="text-base md:text-lg font-semibold text-white mb-3">
+              Who to follow
+            </h2>
+            <div className="space-y-2">{userList}</div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
