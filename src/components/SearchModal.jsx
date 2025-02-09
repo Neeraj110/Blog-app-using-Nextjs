@@ -50,25 +50,23 @@ const SearchModal = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className=" h-[85vh] w-[95vw]  bg-black text-white border-0">
         {/* Header */}
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold"></DialogTitle>
-          <DialogClose></DialogClose>
+        <DialogHeader className="py-2">
+        <DialogClose></DialogClose>
+          <DialogTitle className="text-lg font-bold">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Search users..."
+              className="w-full rounded-full bg-gray-800 border-gray-700 text-white px-4 py-3 focus:border-gray-600 focus:ring-gray-600 placeholder:text-gray-500"
+            />
+          </DialogTitle>
+          
         </DialogHeader>
 
-        {/* Search Bar */}
-        <div className="px-4 py-3">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Search users..."
-            className="w-full rounded-full bg-gray-800 border-gray-700 text-white px-4 py-3 focus:border-gray-600 focus:ring-gray-600 placeholder:text-gray-500"
-          />
-        </div>
-
         {/* Users List */}
-        <div className="overflow-y-auto px-4 py-3">
+        <div className="overflow-y-auto px-4 ">
           {loading ? (
-            <div className="flex flex-col space-y-3">
+            <div className="flex flex-col space-y-2">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
