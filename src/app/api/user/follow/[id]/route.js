@@ -9,7 +9,6 @@ export async function POST(req, { params }) {
   try {
     const { id: targetUserId } = params;
     const { user, success, error, status } = await validateUser(req);
-
     if (!success) return NextResponse.json({ error }, { status });
     if (!targetUserId)
       return NextResponse.json(
