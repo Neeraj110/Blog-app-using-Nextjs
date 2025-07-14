@@ -7,6 +7,7 @@ import { Notification } from "@/models/notification.model";
 // POST: /api/user/follow/[id] - Follow or unfollow a user
 export async function POST(req, { params }) {
   try {
+    await connectDB();
     const { id: targetUserId } = params;
     const { user, success, error, status } = await validateUser(req);
     if (!success) return NextResponse.json({ error }, { status });
@@ -21,7 +22,6 @@ export async function POST(req, { params }) {
         { status: 400 }
       );
 
-    await connectDB();
 
     const [targetUser, currentUser] = await Promise.all([
       User.findById(targetUserId).select("followers"),
@@ -89,11 +89,11 @@ export async function POST(req, { params }) {
 // GET: /api/user/follow/[id] 
 export async function GET(req, { params }) {
   try {
+    await connectDB();
     const { id: targetUserId } = params;
     const { user, success, error, status } = await validateUser(req);
 
     if (!success) return NextResponse.json({ error }, { status });
-    await connectDB();
 
     const [currentUser, targetUser] = await Promise.all([
       User.findById(user._id).select("following"),
