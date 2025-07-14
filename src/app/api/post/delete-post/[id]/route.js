@@ -3,12 +3,13 @@ import { Post } from "@/models/post.model";
 import { connectDB } from "@/lib/connectDB";
 import { NextResponse } from "next/server";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
+import { cacheService } from "@/helper/cacheData";
 
-// Path: src/app/api/post/delete-post/id
+// Path: src/app/api/post/delete-post/[id]
 export async function DELETE(req, { params }) {
   try {
     const userId = req.headers.get("userid");
-    const { id } = await params;
+    const { id: postId } = params;
 
     // Validate user authentication
     if (!userId) {
@@ -17,8 +18,10 @@ export async function DELETE(req, { params }) {
         { status: 401 }
       );
     }
+
     await connectDB();
-    // Verify user exists
+
+    // Validate user existence
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
@@ -27,8 +30,8 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    // Find the post to be deleted
-    const post = await Post.findById(id);
+    // Find the post
+    const post = await Post.findById(postId);
     if (!post) {
       return NextResponse.json(
         { success: false, error: "Post not found" },
@@ -36,30 +39,32 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    // Check if the user is the owner of the post
+    // Authorization check
     if (post.owner.toString() !== userId) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        {
-          status: 403,
-        }
+        { success: false, error: "Unauthorized - You don't own this post" },
+        { status: 403 }
       );
     }
 
     // Delete media from Cloudinary
-    if (post.media && post.media.length > 0) {
+    if (Array.isArray(post.media)) {
       for (const media of post.media) {
-        if (media.url) {
-          await deleteFromCloudinary(media.url);
-        }
+        if (media?.url) await deleteFromCloudinary(media.url);
       }
     }
 
-    // Delete the post from the database
-    await Post.findByIdAndDelete(id);
-    await user.posts.pull(id);
-    await user.bookmarks.pull(id);
+    // Remove post reference from user
+    user.posts.pull(postId);
+    user.bookmarks.pull(postId);
     await user.save();
+
+    // Delete post
+    await post.deleteOne();
+
+    // Invalidate related cache
+    cacheService.invalidatePostCache(postId);
+    cacheService.invalidateUserCache(userId);
 
     return NextResponse.json(
       { success: true, message: "Post deleted successfully" },
@@ -71,6 +76,7 @@ export async function DELETE(req, { params }) {
       {
         success: false,
         error: "An unexpected error occurred while deleting the post",
+        message: error.message,
       },
       { status: 500 }
     );
