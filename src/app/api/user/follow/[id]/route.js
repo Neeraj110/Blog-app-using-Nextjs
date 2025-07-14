@@ -4,125 +4,82 @@ import { connectDB } from "@/lib/connectDB";
 import { validateUser } from "@/helper/validateUser";
 import { Notification } from "@/models/notification.model";
 
-// @route   POST api/user/follow/[id]
+// POST: /api/user/follow/[id] - Follow or unfollow a user
 export async function POST(req, { params }) {
   try {
     const { id: targetUserId } = params;
-    
-    // Validate user and connect to DB
     const { user, success, error, status } = await validateUser(req);
-    if (!success) {
-      return NextResponse.json({ error }, { status });
-    }
-    
-    // Input validation
-    if (!targetUserId) {
+
+    if (!success) return NextResponse.json({ error }, { status });
+    if (!targetUserId)
       return NextResponse.json(
         { error: "Target user ID is required" },
         { status: 400 }
       );
-    }
-
-    await connectDB();
-
-    // Prevent self-following
-    if (user._id.toString() === targetUserId) {
+    if (user._id.toString() === targetUserId)
       return NextResponse.json(
         { error: "Users cannot follow themselves" },
         { status: 400 }
       );
-    }
 
-    // Find both users in a single query for better performance
+    await connectDB();
+
     const [targetUser, currentUser] = await Promise.all([
-      User.findById(targetUserId),
-      User.findById(user._id)
+      User.findById(targetUserId).select("followers"),
+      User.findById(user._id).select("following"),
     ]);
 
-    // Validate users exist
-    if (!targetUser) {
-      return NextResponse.json(
-        { error: "Target user not found" },
-        { status: 404 }
-      );
-    }
+    if (!targetUser || !currentUser)
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: "Current user not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check if already following
     const isFollowing = currentUser.following.includes(targetUserId);
-    
-    // Prepare notification data
-    const notificationData = {
+
+    const updateOps = isFollowing
+      ? [
+          User.updateOne(
+            { _id: user._id },
+            { $pull: { following: targetUserId } }
+          ),
+          User.updateOne(
+            { _id: targetUserId },
+            { $pull: { followers: user._id } }
+          ),
+        ]
+      : [
+          User.updateOne(
+            { _id: user._id },
+            { $addToSet: { following: targetUserId } }
+          ),
+          User.updateOne(
+            { _id: targetUserId },
+            { $addToSet: { followers: user._id } }
+          ),
+        ];
+
+    const notification = Notification.create({
       receiver: targetUserId,
       sender: user._id,
       tag: isFollowing ? "Stopped Following" : "New Follower",
-      message: isFollowing 
+      message: isFollowing
         ? `${user.name} has stopped following you.`
         : `${user.name} started following you.`,
-      refUser: user._id // Add reference to the user for potential future use
-    };
+      refUser: user._id,
+    });
 
-    try {
-      if (isFollowing) {
-        // Unfollow logic with atomic updates
-        await Promise.all([
-          User.findByIdAndUpdate(
-            currentUser._id,
-            { $pull: { following: targetUserId } },
-            { new: true }
-          ),
-          User.findByIdAndUpdate(
-            targetUser._id,
-            { $pull: { followers: user._id } },
-            { new: true }
-          ),
-          Notification.create(notificationData)
-        ]);
+    await Promise.all([...updateOps, notification]);
 
-        return NextResponse.json({
-          success: true,
-          message: "Successfully unfollowed user",
-          isFollowing: false,
-          followersCount: targetUser.followers.length - 1
-        });
-      } else {
-        // Follow logic with atomic updates
-        await Promise.all([
-          User.findByIdAndUpdate(
-            currentUser._id,
-            { $addToSet: { following: targetUserId } },
-            { new: true }
-          ),
-          User.findByIdAndUpdate(
-            targetUser._id,
-            { $addToSet: { followers: user._id } },
-            { new: true }
-          ),
-          Notification.create(notificationData)
-        ]);
-
-        return NextResponse.json({
-          success: true,
-          message: "Successfully followed user",
-          isFollowing: true,
-          followersCount: targetUser.followers.length + 1
-        });
-      }
-    } catch (err) {
-      console.error("Error updating follow status:", err);
-      return NextResponse.json(
-        { error: "Failed to update follow status" },
-        { status: 500 }
-      );
-    }
-  } catch (error) {
-    console.error("Follow route error:", error);
+    return NextResponse.json({
+      success: true,
+      message: isFollowing
+        ? "Successfully unfollowed user"
+        : "Successfully followed user",
+      isFollowing: !isFollowing,
+      followersCount: isFollowing
+        ? targetUser.followers.length - 1
+        : targetUser.followers.length + 1,
+    });
+  } catch (err) {
+    console.error("Follow route error:", err);
     return NextResponse.json(
       { error: "Something went wrong in follow route" },
       { status: 500 }
@@ -130,40 +87,32 @@ export async function POST(req, { params }) {
   }
 }
 
-// GET request to check follow status
+// GET: /api/user/follow/[id] 
 export async function GET(req, { params }) {
   try {
     const { id: targetUserId } = params;
-
     const { user, success, error, status } = await validateUser(req);
-    if (!success) {
-      return NextResponse.json({ error }, { status });
-    }
 
+    if (!success) return NextResponse.json({ error }, { status });
     await connectDB();
 
-    // Get both user data in a single query
     const [currentUser, targetUser] = await Promise.all([
-      User.findById(user._id).select('following'),
-      User.findById(targetUserId).select('followers')
+      User.findById(user._id).select("following"),
+      User.findById(targetUserId).select("followers"),
     ]);
 
-    if (!currentUser || !targetUser) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
-    }
+    if (!currentUser || !targetUser)
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const isFollowing = currentUser.following.includes(targetUserId);
 
     return NextResponse.json({
       success: true,
       isFollowing,
-      followersCount: targetUser.followers.length
+      followersCount: targetUser.followers.length,
     });
-  } catch (error) {
-    console.error("Follow status check error:", error);
+  } catch (err) {
+    console.error("Follow status check error:", err);
     return NextResponse.json(
       { error: "Error checking follow status" },
       { status: 500 }
