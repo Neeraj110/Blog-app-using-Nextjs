@@ -1,204 +1,50 @@
+import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/connectDB";
 import { User } from "@/models/user.model";
-import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+
 import { cacheService } from "@/helper/cacheData";
 
 export async function GET(req) {
   try {
     const userId = req.headers.get("userid");
-    if (!userId) {
+    if (!userId)
       return NextResponse.json(
         { error: "User ID is required" },
         { status: 400 }
       );
-    }
 
-    // Try cache first
     const cachedProfile = cacheService.getUserProfile(userId);
-    if (cachedProfile) {
-      return NextResponse.json({ user: cachedProfile });
-    }
+    if (cachedProfile) return NextResponse.json({ user: cachedProfile });
 
     await connectDB();
-    const objectId = new mongoose.Types.ObjectId(userId);
-    const [userProfile] = await User.aggregate([
-      // Match the specific user
-      { $match: { _id: objectId } },
+    const user = await User.findById(userId)
+      .select("-password")
+      .populate("followers", "name username avatar")
+      .populate("following", "name username avatar")
+      .populate({
+        path: "posts",
+        populate: [
+          { path: "owner", select: "name username avatar" },
+          { path: "likes", select: "name username avatar" },
+          { path: "commentUsers", select: "name username avatar" },
+        ],
+        options: { sort: { createdAt: -1 } },
+      })
+      .populate({
+        path: "bookmarks",
+        populate: [
+          { path: "owner", select: "name username avatar" },
+          { path: "likes", select: "name username avatar" },
+          { path: "commentUsers", select: "name username avatar" },
+        ],
+        options: { sort: { createdAt: -1 } },
+      });
 
-      // Remove password field
-      { $project: { password: 0 } },
-
-      // Lookup and populate followers
-      {
-        $lookup: {
-          from: "users",
-          localField: "followers",
-          foreignField: "_id",
-          pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-          as: "followers",
-        },
-      },
-
-      // Lookup and populate following
-      {
-        $lookup: {
-          from: "users",
-          localField: "following",
-          foreignField: "_id",
-          pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-          as: "following",
-        },
-      },
-
-      // Lookup user's posts
-      {
-        $lookup: {
-          from: "posts",
-          localField: "_id",
-          foreignField: "owner",
-          pipeline: [
-            // Populate post owner
-            {
-              $lookup: {
-                from: "users",
-                localField: "owner",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "owner",
-              },
-            },
-            { $unwind: "$owner" },
-
-            // Populate post likes
-            {
-              $lookup: {
-                from: "users",
-                localField: "likes",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "likes",
-              },
-            },
-
-            // Populate comments and their users
-            {
-              $lookup: {
-                from: "users",
-                localField: "comments.user",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "commentUsers",
-              },
-            },
-
-            // Sort by creation date
-            { $sort: { createdAt: -1 } },
-          ],
-          as: "posts",
-        },
-      },
-
-      // Lookup bookmarked posts
-      {
-        $lookup: {
-          from: "posts",
-          localField: "bookmarks",
-          foreignField: "_id",
-          pipeline: [
-            // Populate post owner
-            {
-              $lookup: {
-                from: "users",
-                localField: "owner",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "owner",
-              },
-            },
-            { $unwind: "$owner" },
-
-            // Populate post likes
-            {
-              $lookup: {
-                from: "users",
-                localField: "likes",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "likes",
-              },
-            },
-
-            // Populate comments and their users
-            {
-              $lookup: {
-                from: "users",
-                localField: "comments.user",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "commentUsers",
-              },
-            },
-
-            // Sort by creation date
-            { $sort: { createdAt: -1 } },
-          ],
-          as: "bookmarks",
-        },
-      },
-
-      // Lookup liked posts
-      {
-        $lookup: {
-          from: "posts",
-          let: { userId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $in: ["$$userId", "$likes"],
-                },
-              },
-            },
-            // Populate post owner
-            {
-              $lookup: {
-                from: "users",
-                localField: "owner",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "owner",
-              },
-            },
-            { $unwind: "$owner" },
-
-            // Populate comments and their users
-            {
-              $lookup: {
-                from: "users",
-                localField: "comments.user",
-                foreignField: "_id",
-                pipeline: [{ $project: { name: 1, username: 1, avatar: 1 } }],
-                as: "commentUsers",
-              },
-            },
-
-            // Sort by creation date
-            { $sort: { createdAt: -1 } },
-          ],
-          as: "likedPosts",
-        },
-      },
-    ]);
-
-    if (!userProfile) {
+    if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
 
-    // Cache the profile
-    cacheService.setUserProfile(userId, userProfile);
-
-    return NextResponse.json({ user: userProfile });
+    cacheService.setUserProfile(userId, user.toObject());
+    return NextResponse.json({ user });
   } catch (error) {
     console.error("Error fetching profile:", error);
     return NextResponse.json(
