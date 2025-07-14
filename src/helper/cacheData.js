@@ -1,9 +1,8 @@
 import NodeCache from "node-cache";
 
-// Initialize cache with configuration
 const cache = new NodeCache({
-  stdTTL: 300, // 5 minutes default TTL
-  checkperiod: 120, // Check for expired keys every 2 minutes
+  stdTTL: 120,
+  checkperiod: 60,
   deleteOnExpire: true,
   maxKeys: 2000,
 });
@@ -77,10 +76,10 @@ export const cacheService = {
   },
 
   invalidateSearchCache: () => {
-    cache.keys().forEach(key => {
+    cache.keys().forEach((key) => {
       if (key.startsWith("user:search:")) {
         cache.del(key);
       }
     });
-  }
+  },
 };

@@ -76,7 +76,6 @@ const CreatePostModal = ({ isOpen, onClose }) => {
           posts: response.data.data || [],
         })
       );
-      // dispatch(addPost(data.post));
       handlefetchProfile(dispatch, setCredential);
       toast.success("Post created successfully");
       handleReset();
