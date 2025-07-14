@@ -1,8 +1,8 @@
 import NodeCache from "node-cache";
 
 const cache = new NodeCache({
-  stdTTL: 120,
-  checkperiod: 60,
+  stdTTL: 100,
+  checkperiod: 50,
   deleteOnExpire: true,
   maxKeys: 2000,
 });
