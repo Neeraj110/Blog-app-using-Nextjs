@@ -5,7 +5,8 @@ import mongoose from "mongoose";
 
 export async function GET(req, { params }) {
   try {
-    const { id } = params; // Get user ID from URL params
+    // Await params before accessing properties (Next.js 15 requirement)
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
@@ -33,12 +34,17 @@ export async function GET(req, { params }) {
         $addFields: {
           isFollowedByCurrentUser: {
             $cond: {
-              if: { $in: [new mongoose.Types.ObjectId(currentUserId || ''), "$followers"] },
+              if: {
+                $in: [
+                  new mongoose.Types.ObjectId(currentUserId || ""),
+                  "$followers",
+                ],
+              },
               then: true,
-              else: false
-            }
-          }
-        }
+              else: false,
+            },
+          },
+        },
       },
 
       // Lookup and populate followers
@@ -87,12 +93,17 @@ export async function GET(req, { params }) {
               $addFields: {
                 isLikedByCurrentUser: {
                   $cond: {
-                    if: { $in: [new mongoose.Types.ObjectId(currentUserId || ''), "$likes"] },
+                    if: {
+                      $in: [
+                        new mongoose.Types.ObjectId(currentUserId || ""),
+                        "$likes",
+                      ],
+                    },
                     then: true,
-                    else: false
-                  }
-                }
-              }
+                    else: false,
+                  },
+                },
+              },
             },
 
             // Populate post likes
@@ -134,25 +145,27 @@ export async function GET(req, { params }) {
                                 $filter: {
                                   input: "$commentUsers",
                                   as: "user",
-                                  cond: { $eq: ["$$user._id", "$$comment.user"] }
-                                }
+                                  cond: {
+                                    $eq: ["$$user._id", "$$comment.user"],
+                                  },
+                                },
                               },
-                              0
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
+                              0,
+                            ],
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
             },
 
             // Remove the temporary commentUsers field
             {
               $project: {
-                commentUsers: 0
-              }
+                commentUsers: 0,
+              },
             },
 
             // Sort by creation date
@@ -186,12 +199,17 @@ export async function GET(req, { params }) {
               $addFields: {
                 isLikedByCurrentUser: {
                   $cond: {
-                    if: { $in: [new mongoose.Types.ObjectId(currentUserId || ''), "$likes"] },
+                    if: {
+                      $in: [
+                        new mongoose.Types.ObjectId(currentUserId || ""),
+                        "$likes",
+                      ],
+                    },
                     then: true,
-                    else: false
-                  }
-                }
-              }
+                    else: false,
+                  },
+                },
+              },
             },
 
             // Populate post likes
@@ -233,25 +251,27 @@ export async function GET(req, { params }) {
                                 $filter: {
                                   input: "$commentUsers",
                                   as: "user",
-                                  cond: { $eq: ["$$user._id", "$$comment.user"] }
-                                }
+                                  cond: {
+                                    $eq: ["$$user._id", "$$comment.user"],
+                                  },
+                                },
                               },
-                              0
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
+                              0,
+                            ],
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
             },
 
             // Remove the temporary commentUsers field
             {
               $project: {
-                commentUsers: 0
-              }
+                commentUsers: 0,
+              },
             },
 
             // Sort by creation date
@@ -291,12 +311,17 @@ export async function GET(req, { params }) {
               $addFields: {
                 isLikedByCurrentUser: {
                   $cond: {
-                    if: { $in: [new mongoose.Types.ObjectId(currentUserId || ''), "$likes"] },
+                    if: {
+                      $in: [
+                        new mongoose.Types.ObjectId(currentUserId || ""),
+                        "$likes",
+                      ],
+                    },
                     then: true,
-                    else: false
-                  }
-                }
-              }
+                    else: false,
+                  },
+                },
+              },
             },
 
             // Populate comments and their users
@@ -327,25 +352,27 @@ export async function GET(req, { params }) {
                                 $filter: {
                                   input: "$commentUsers",
                                   as: "user",
-                                  cond: { $eq: ["$$user._id", "$$comment.user"] }
-                                }
+                                  cond: {
+                                    $eq: ["$$user._id", "$$comment.user"],
+                                  },
+                                },
                               },
-                              0
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
+                              0,
+                            ],
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
             },
 
             // Remove the temporary commentUsers field
             {
               $project: {
-                commentUsers: 0
-              }
+                commentUsers: 0,
+              },
             },
 
             // Sort by creation date

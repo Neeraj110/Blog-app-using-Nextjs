@@ -15,7 +15,8 @@ export async function POST(req, { params }) {
     await connectDB();
 
     // Extract and validate parameters
-    const { id: postId } = params;
+    // Await params before accessing properties (Next.js 15 requirement)
+    const { id: postId } = await params;
     const { comment } = await req.json();
 
     // Input validation
@@ -35,8 +36,8 @@ export async function POST(req, { params }) {
 
     // Find post and validate
     const post = await Post.findById(postId)
-      .populate('owner', 'name') // Populate owner details for notification
-      .select('owner comments engagement'); // Select only needed fields
+      .populate("owner", "name") // Populate owner details for notification
+      .select("owner comments engagement"); // Select only needed fields
 
     if (!post) {
       return NextResponse.json(
@@ -49,7 +50,7 @@ export async function POST(req, { params }) {
     const newComment = {
       user: user._id,
       comment: comment.trim(),
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     // Update post with new comment
@@ -57,10 +58,10 @@ export async function POST(req, { params }) {
       postId,
       {
         $push: { comments: newComment },
-        $inc: { 'engagement.commentCount': 1 }
+        $inc: { "engagement.commentCount": 1 },
       },
       { new: true }
-    ).select('engagement');
+    ).select("engagement");
 
     // Create notification if comment is from different user
     let notificationPromise = Promise.resolve(null);
@@ -70,9 +71,11 @@ export async function POST(req, { params }) {
         sender: user._id,
         refPost: post._id,
         tag: "New Comment",
-        message: `${user.name} commented on your post: "${comment.length > 50 ? comment.substring(0, 47) + '...' : comment}"`,
+        message: `${user.name} commented on your post: "${
+          comment.length > 50 ? comment.substring(0, 47) + "..." : comment
+        }"`,
         unread: true,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
 
       notificationPromise = Notification.create(notificationData);
@@ -82,11 +85,13 @@ export async function POST(req, { params }) {
         const mentionNotificationData = {
           ...notificationData,
           tag: "Mention in Comment",
-          message: `${user.name} mentioned you in a comment: "${comment.length > 50 ? comment.substring(0, 47) + '...' : comment}"`
+          message: `${user.name} mentioned you in a comment: "${
+            comment.length > 50 ? comment.substring(0, 47) + "..." : comment
+          }"`,
         };
         notificationPromise = Promise.all([
           notificationPromise,
-          Notification.create(mentionNotificationData)
+          Notification.create(mentionNotificationData),
         ]);
       }
     }
@@ -94,8 +99,8 @@ export async function POST(req, { params }) {
     // Execute both promises concurrently
     const [updatedPost, notification] = await Promise.all([
       updatePostPromise,
-      notificationPromise
-    ]).catch(error => {
+      notificationPromise,
+    ]).catch((error) => {
       console.error("Error in parallel operations:", error);
       throw error;
     });
@@ -110,21 +115,21 @@ export async function POST(req, { params }) {
           ...newComment,
           user: {
             _id: user._id,
-            name: user.name
-          }
+            name: user.name,
+          },
         },
-        notificationSent: !!notification
+        notificationSent: !!notification,
       },
       { status: 200 }
     );
-
   } catch (error) {
     console.error("Error adding comment:", error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: "Failed to add comment",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details:
+          process.env.NODE_ENV === "development" ? error.message : undefined,
       },
       { status: 500 }
     );

@@ -3,14 +3,21 @@ import mongoose from "mongoose";
 const otpSchema = new mongoose.Schema({
   email: { type: String, required: true },
   otp: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now, expires: 600 }, // Expires in 10 minutes
+  name: { type: String, required: true },
+  username: { type: String, required: true },
+  password: { type: String, required: true },
+  expiresAt: {
+    type: Date,
+    default: Date.now,
+    expires: 300, // 5 minutes
+  },
 });
 
-let OTP;
-try {
-  OTP = mongoose.model("Otp");
-} catch (error) {
-  OTP = mongoose.model("Otp", otpSchema);
+// Clear any existing model to ensure fresh schema
+if (mongoose.models.Otp) {
+  delete mongoose.models.Otp;
 }
+
+const OTP = mongoose.model("Otp", otpSchema);
 
 export { OTP };

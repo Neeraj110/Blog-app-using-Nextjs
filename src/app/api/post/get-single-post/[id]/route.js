@@ -6,7 +6,8 @@ import { cacheService } from "@/helper/cacheData";
 
 export async function GET(req, { params }) {
   try {
-    const { id } = params;
+    // Await params before accessing properties (Next.js 15 requirement)
+    const { id } = await params;
     const { success, error, status } = await validateUser(req);
 
     if (!success) {

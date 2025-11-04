@@ -4,16 +4,13 @@ import { User } from "@/models/user.model";
 import { sendVerificationEmail } from "@/lib/sendEmails";
 import { OTP } from "@/models/otp.Model";
 
-// api/user/register
 export async function POST(req) {
   try {
     const body = await req.json();
     const { name, email, username, password } = body;
 
-    // Connect to the database
     await connectDB();
 
-    // Check for existing user by email
     if (await User.findOne({ email })) {
       return NextResponse.json(
         { error: "Email already registered" },
@@ -21,29 +18,31 @@ export async function POST(req) {
       );
     }
 
-    // Create a new user
-    const newUser = await User.create({
-      name,
-      email,
-      username,
-      password,
-      isVerified: false,
-    });
+    if (await User.findOne({ username })) {
+      return NextResponse.json(
+        { error: "Username already taken" },
+        { status: 400 }
+      );
+    }
 
-    // Generate a random 6-digit OTP
+    await OTP.deleteMany({ email });
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Save the OTP to the database
-    await OTP.create({ email, otp });
+    await OTP.create({
+      email,
+      otp,
+      name,
+      username,
+      password,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
 
-    // Send the OTP to the user's email
     await sendVerificationEmail({ email, name, otp });
 
-    // Respond with a success message
     return NextResponse.json({
-      message: "Registration successful, OTP sent.",
-      data: newUser.toSafeObject(),
-      status: 201,
+      message: "Registration successful, OTP sent to your email.",
+      status: 200,
     });
   } catch (error) {
     console.error("Error in registration:", error);

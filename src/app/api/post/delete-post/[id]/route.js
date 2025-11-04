@@ -9,7 +9,8 @@ import { cacheService } from "@/helper/cacheData";
 export async function DELETE(req, { params }) {
   try {
     const userId = req.headers.get("userid");
-    const { id: postId } = params;
+    // Await params before accessing properties (Next.js 15 requirement)
+    const { id: postId } = await params;
 
     // Validate user authentication
     if (!userId) {

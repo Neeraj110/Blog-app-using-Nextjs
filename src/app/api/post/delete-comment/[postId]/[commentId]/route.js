@@ -12,7 +12,8 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ success, error }, { status });
     }
 
-    const { postId, commentId } = params;
+    // Await params before accessing properties (Next.js 15 requirement)
+    const { postId, commentId } = await params;
 
     // Connect to the database
     await connectDB();
