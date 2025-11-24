@@ -280,7 +280,7 @@ function AskToAi() {
           </main>
 
           {/* Input Section - Fixed to bottom with better mobile experience */}
-          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-black/70 backdrop-blur-lg p-3 z-50">
+          <div className="fixed bottom-0 w-full md:w-[50%] border-t border-gray-800 bg-black/70 backdrop-blur-lg p-3 z-50">
             <form
               onSubmit={handleQuerySubmit}
               className="flex items-center gap-3 max-w-3xl mx-auto w-full px-2"
