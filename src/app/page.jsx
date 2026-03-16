@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,13 +111,19 @@ export default function HomePage() {
                 </a>
               ))}
               <Button
+                asChild
                 variant="ghost"
                 className="text-gray-300 hover:text-white text-lg hover:bg-white/10 rounded-full px-6"
               >
-                Sign In
+                <Link href="/auth/login">Sign In</Link>
               </Button>
-              <Button className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-lg px-8 py-6 shadow-xl shadow-purple-500/50 rounded-full transform hover:scale-105 transition-all duration-300">
-                Get Started <ArrowRight className="ml-2 w-5 h-5" />
+              <Button
+                asChild
+                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-lg px-8 py-6 shadow-xl shadow-purple-500/50 rounded-full transform hover:scale-105 transition-all duration-300"
+              >
+                <Link href="/auth/register">
+                  Get Started <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
               </Button>
             </div>
 
@@ -150,13 +157,17 @@ export default function HomePage() {
               <Separator className="bg-white/10" />
               <div className="space-y-4">
                 <Button
+                  asChild
                   className="w-full text-lg rounded-full"
                   variant="outline"
                 >
-                  Sign In
+                  <Link href="/auth/login">Sign In</Link>
                 </Button>
-                <Button className="w-full text-lg bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-lg">
-                  Get Started
+                <Button
+                  asChild
+                  className="w-full text-lg bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-lg"
+                >
+                  <Link href="/auth/register">Get Started</Link>
                 </Button>
               </div>
             </div>
@@ -187,10 +198,13 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Button
+              asChild
               size="lg"
               className="text-xl px-12 py-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 rounded-full shadow-2xl shadow-purple-500/50 transform hover:scale-110 transition-all duration-300"
             >
-              Start Free <ArrowRight className="ml-3 w-6 h-6" />
+              <Link href="/auth/register">
+                Start Free <ArrowRight className="ml-3 w-6 h-6" />
+              </Link>
             </Button>
             <Button
               size="lg"
@@ -356,7 +370,7 @@ export default function HomePage() {
                 >
                   {tag}
                 </Badge>
-              )
+              ),
             )}
           </div>
         </div>
@@ -374,10 +388,11 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-8 justify-center">
             <Button
+              asChild
               size="lg"
               className="text-2xl px-16 py-10 bg-white text-black hover:bg-gray-100 rounded-full shadow-2xl font-bold transform hover:scale-110 transition-all duration-300"
             >
-              Create Free Account
+              <Link href="/auth/register">Create Free Account</Link>
             </Button>
             <Button
               size="lg"
