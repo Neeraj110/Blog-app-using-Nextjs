@@ -14,8 +14,8 @@ function DashboardLayout({ children }) {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className=" min-h-[calc(100vh)]">{children}</div>
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0 border-r border-gray-800">
+          <div className="min-h-[calc(100vh)]">{children}</div>
         </main>
 
         {/* Right Sidebar */}

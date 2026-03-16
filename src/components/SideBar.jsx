@@ -53,12 +53,14 @@ function SideBar() {
     return (
       <button
         onClick={handleClick}
-        className={`flex text-[1.1rem] items-center space-x-4 p-3 rounded-full transition-colors
-          hover:bg-gray-900 ${isActive ? "font-bold" : "text-gray-200"}
+        className={`flex text-lg items-center space-x-4 p-3 rounded-full transition-all duration-300 group
+          hover:bg-white/10 ${isActive ? "font-bold text-white bg-white/5 border border-white/10" : "text-gray-300 hover:text-white"}
           md:w-fit md:min-w-[150px]`}
       >
-        <Icon className="h-6 w-6" />
-        <span className="hidden md:inline">{label}</span>
+        <div className={`p-1.5 rounded-lg transition-colors ${isActive ? "bg-gradient-to-br from-indigo-500/20 to-purple-500/20" : "group-hover:bg-white/10"}`}>
+          <Icon className={`h-6 w-6 ${isActive ? "text-indigo-400" : ""}`} />
+        </div>
+        <span className="hidden md:inline group-hover:translate-x-1 transition-transform">{label}</span>
       </button>
     );
   });

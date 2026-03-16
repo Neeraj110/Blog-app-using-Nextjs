@@ -106,14 +106,23 @@ function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black text-white">
-      <div className="w-full max-w-md p-6 rounded-xl shadow-lg">
-        <h2 className="text-3xl font-semibold text-center mb-6">Register</h2>
+    <div className="flex items-center justify-center min-h-screen relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-purple-900/20 text-white">
+      {/* Animated gradient orbs */}
+      <div className="absolute top-20 left-10 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] animate-pulse"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
+      <div className="w-full max-w-md p-8 rounded-3xl shadow-2xl bg-black/40 backdrop-blur-2xl border border-white/10 relative z-10 m-4">
+        <div className="text-center mb-8">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+            Create Account
+          </h2>
+          <p className="text-gray-400">Join the SocialHub community</p>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-5">
           {/* Name Field */}
-          <div className="space-y-1">
-            <label htmlFor="name" className="block text-sm">
+          <div className="space-y-2">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-300">
               Name
             </label>
             <input
@@ -123,13 +132,13 @@ function RegisterPage() {
               placeholder="Enter your name"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full p-2 rounded border bg-black"
+              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
             />
           </div>
 
           {/* Email Field */}
-          <div className="space-y-1">
-            <label htmlFor="email" className="block text-sm">
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
               Email
             </label>
             <input
@@ -139,13 +148,13 @@ function RegisterPage() {
               placeholder="Enter your email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full p-2 rounded border bg-black"
+              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
             />
           </div>
 
           {/* Password Field */}
-          <div className="space-y-1">
-            <label htmlFor="password" className="block text-sm">
+          <div className="space-y-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300">
               Password
             </label>
             <input
@@ -155,46 +164,47 @@ function RegisterPage() {
               placeholder="Enter your password"
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full p-2 rounded border bg-black"
+              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
             />
           </div>
 
           <Button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-500"
+            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 rounded-xl shadow-lg shadow-purple-500/25 transform hover:scale-[1.02] transition-all duration-300 mt-2"
             disabled={isLoading}
           >
             {isLoading ? (
-              <div className="flex justify-center items-center">
-                <div className="w-4 h-4 border-2 border-t-white border-blue-300 rounded-full animate-spin"></div>
+              <div className="flex justify-center items-center gap-2">
+                <div className="w-5 h-5 border-2 border-t-white border-white/30 rounded-full animate-spin"></div>
+                <span>Registering...</span>
               </div>
             ) : (
-              "Register"
+              "Create Account"
             )}
           </Button>
         </form>
 
         {/* Modal for OTP Verification */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="bg-white text-black">
-            <h2 className="text-xl font-semibold text-center mb-4">
+          <DialogContent className="bg-gray-900/95 backdrop-blur-xl border border-white/10 text-white rounded-2xl shadow-2xl p-8 max-w-[400px]">
+            <h2 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
               Verify Your Email
             </h2>
-            <p className="text-gray-600 text-center mb-4">
-              Enter the 6-digit OTP sent to {email}.
+            <p className="text-gray-400 text-center mb-6 text-sm">
+              Enter the 6-digit OTP sent to <span className="text-white font-medium">{email}</span>
             </p>
-            <div className="space-y-4">
+            <div className="space-y-5">
               <input
-                placeholder="Enter OTP"
+                placeholder="Enter 6-digit OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 maxLength={6}
-                className="w-full p-2 rounded"
+                className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-center tracking-widest text-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-gray-700 transition-all font-mono"
               />
               <Button
                 onClick={handleOtpVerification}
                 disabled={isVerifying}
-                className="w-full bg-blue-500 hover:bg-blue-600"
+                className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-xl shadow-lg transform hover:scale-[1.02] transition-all"
               >
                 {isVerifying ? "Verifying..." : "Verify OTP"}
               </Button>
@@ -202,10 +212,10 @@ function RegisterPage() {
           </DialogContent>
         </Dialog>
 
-        <p className="text-sm text-center mt-4">
+        <p className="text-sm text-center mt-8 text-gray-400">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-blue-400 hover:underline">
-            Login here
+          <Link href="/auth/login" className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 hover:to-pink-400 font-semibold hover:underline decoration-purple-400/50 underline-offset-4 transition-all">
+            Sign in
           </Link>
         </p>
       </div>
