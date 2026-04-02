@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader, Copy, Check, Menu } from "lucide-react";
+import { Send, Loader, Copy, Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 
 function AskToAi() {
   const [query, setQuery] = useState("");
-  const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [activeThread, setActiveThread] = useState("t1");
+
   const chatContainerRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -32,9 +32,7 @@ function AskToAi() {
   const handleNewChat = () => {
     setHistory([]);
     setQuery("");
-    setResponse("");
     setError(null);
-    setLoading(false);
   };
 
   const copyToClipboard = async (text, index) => {
@@ -53,7 +51,7 @@ function AskToAi() {
 
     setError(null);
     setLoading(true);
-    setHistory([...history, { type: "user", text: query }]);
+    setHistory((prev) => [...prev, { type: "user", text: query }]);
 
     try {
       const res = await axios.post(
@@ -62,11 +60,7 @@ function AskToAi() {
           contents: [
             {
               role: "user",
-              parts: [
-                {
-                  text: query,
-                },
-              ],
+              parts: [{ text: query }],
             },
           ],
           generationConfig: {
@@ -80,19 +74,18 @@ function AskToAi() {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const answer =
         res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
         "No response received.";
-      setResponse(answer);
       setHistory((prev) => [...prev, { type: "ai", text: answer }]);
     } catch (err) {
       console.error("API Error:", err.response?.data || err);
       setError(
         err.response?.data?.error?.message ||
-          "Something went wrong. Please try again."
+          "Something went wrong. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -106,15 +99,17 @@ function AskToAi() {
       if (part.startsWith("```")) {
         const code = part.slice(3, -3);
         return (
-          <div key={idx} className="relative mt-2 mb-4">
-            <div className="bg-black/50 backdrop-blur-sm rounded-lg border border-gray-700/50">
-              <div className="flex justify-between items-center px-4 py-2 border-b border-gray-700/50">
-                <div className="text-gray-400 text-xs font-medium">Code</div>
+          <div key={idx} className="relative mt-3 mb-4">
+            <div className="rounded-2xl bg-surface-container-low border border-outline-variant/25 overflow-hidden">
+              <div className="flex justify-between items-center px-4 py-2 border-b border-outline-variant/20">
+                <div className="text-on-surface-variant text-xs font-semibold uppercase tracking-wider">
+                  Code
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => copyToClipboard(code, idx)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-on-surface-variant hover:text-on-surface"
                 >
                   {copiedIndex === idx ? (
                     <Check size={16} className="text-green-500" />
@@ -123,7 +118,7 @@ function AskToAi() {
                   )}
                 </Button>
               </div>
-              <pre className="p-4 overflow-x-auto font-mono text-sm text-gray-300">
+              <pre className="p-4 overflow-x-auto font-mono text-sm text-on-surface-variant">
                 {code}
               </pre>
             </div>
@@ -131,7 +126,10 @@ function AskToAi() {
         );
       }
       return (
-        <p key={idx} className="whitespace-pre-wrap text-gray-100">
+        <p
+          key={idx}
+          className="whitespace-pre-wrap text-on-surface leading-relaxed"
+        >
           {part}
         </p>
       );
@@ -139,179 +137,134 @@ function AskToAi() {
   };
 
   return (
-    <div className="flex flex-col bg-gradient-to-b from-gray-900 to-black text-white h-dvh">
-      {/* Header - fixed height */}
-      <header className="sticky top-0 z-50 backdrop-blur-lg bg-black/70 border-b border-gray-800 px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Ask AI
-          </h1>
+    <div className="h-[calc(100vh-1rem)] md:h-screen bg-surface text-on-surface flex flex-col md:flex-row">
+      {/* <section className="hidden md:flex w-[19rem] bg-surface-container-low flex-col border-r border-outline-variant/15">
+        <div className="p-5 pb-2 flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-on-surface-variant">
+            Recent Threads
+          </h2>
+          <button
+            onClick={handleNewChat}
+            className="w-8 h-8 rounded-full gradient-primary text-white flex items-center justify-center"
+            aria-label="Start new thread"
+          >
+            <Plus size={16} />
+          </button>
         </div>
-        <div className="flex items-center gap-4 text-sm">
+      </section> */}
+
+      <section className="flex-1 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(53,37,205,0.08),transparent_52%)]" />
+
+        <header className="glass-surface sticky top-0 z-20 h-16 px-4 md:px-8 flex items-center justify-between border-b border-outline-variant/10">
+          <div>
+            <h1 className="font-bold tracking-tight">AI Assistant</h1>
+            <p className="text-[11px] uppercase tracking-widest text-on-surface-variant">
+              Active Now
+            </p>
+          </div>
           <Button
             onClick={handleNewChat}
             variant="ghost"
-            className="text-gray-400 hover:text-white"
+            className="text-on-surface-variant hover:text-on-surface"
             disabled={history.length === 0}
           >
             New Chat
           </Button>
-          <Link href="/dashboard" passHref>
-            <Button
-              variant="ghost"
-              className="text-gray-400 md:hidden block hover:text-white"
-            >
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-      </header>
+        </header>
 
-      <div className="flex-1 flex justify-center overflow-hidden">
-        <div className="w-full max-w-4xl flex flex-col">
-          {/* Chat Section */}
-          <main
-            ref={chatContainerRef}
-            className="flex-1 overflow-y-auto p-2 space-y-6 pb-24 md:pb-6"
-          >
-            {history.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center p-4 md:p-8 md:mt-0 mt-[5rem] mb-8">
-                <div className="max-w-3xl w-full space-y-6 md:space-y-8">
-                  <h2 className="text-3xl md:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
-                    Ask Anything to AI
-                  </h2>
-
-                  <p className="text-base md:text-lg text-gray-400 text-center max-w-md mx-auto">
-                    Get instant answers to your questions. Start by typing your
-                    message below.
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 w-full mt-4 md:mt-8">
-                    <div className="bg-gray-800/30 backdrop-blur-sm p-4 md:p-5 rounded-xl border border-gray-700/50 hover:border-gray-600/50 transition-colors">
-                      <p className="text-sm md:text-base text-gray-300 flex items-center gap-2">
-                        <span className="text-xl">💡</span>
-                        <span>Try asking about:</span>
-                      </p>
-                      <p className="text-xs md:text-sm text-gray-400 mt-2">
-                        Code explanations & debugging
-                      </p>
+        <main
+          ref={chatContainerRef}
+          className="relative z-10 h-[calc(100%-9.5rem)] overflow-y-auto px-4 md:px-10 py-6 space-y-6"
+        >
+          {history.length === 0 ? (
+            <div className="max-w-3xl mx-auto pt-8 md:pt-16 text-center">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
+                Ask anything to AI
+              </h2>
+              <p className="text-on-surface-variant max-w-xl mx-auto">
+                Bring code, UX, architecture, or writing prompts. The response
+                panel follows your editorial design language.
+              </p>
+            </div>
+          ) : (
+            <>
+              {history.map((item, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex items-start gap-3",
+                    item.type === "user" ? "justify-end" : "justify-start",
+                  )}
+                >
+                  {item.type === "ai" && (
+                    <div className="w-8 h-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
+                      AI
                     </div>
+                  )}
 
-                    <div className="bg-gray-800/30 backdrop-blur-sm p-4 md:p-5 rounded-xl border border-gray-700/50 hover:border-gray-600/50 transition-colors">
-                      <p className="text-sm md:text-base text-gray-300 flex items-center gap-2">
-                        <span className="text-xl">✍️</span>
-                        <span>Try asking about:</span>
-                      </p>
-                      <p className="text-xs md:text-sm text-gray-400 mt-2">
-                        Writing & content creation
-                      </p>
-                    </div>
+                  <div
+                    className={cn(
+                      "max-w-[88%] md:max-w-[70%] rounded-3xl p-5",
+                      item.type === "user"
+                        ? "gradient-primary text-primary-foreground rounded-tr-md"
+                        : "bg-surface-container-lowest border border-outline-variant/20 rounded-tl-md",
+                    )}
+                  >
+                    {formatMessage(item.text)}
+                  </div>
+                </div>
+              ))}
 
-                    <div className="bg-gray-800/30 backdrop-blur-sm p-4 md:p-5 rounded-xl border border-gray-700/50 hover:border-gray-600/50 transition-colors">
-                      <p className="text-sm md:text-base text-gray-300 flex items-center gap-2">
-                        <span className="text-xl">🔍</span>
-                        <span>Try asking about:</span>
-                      </p>
-                      <p className="text-xs md:text-sm text-gray-400 mt-2">
-                        Research & general knowledge
-                      </p>
+              {loading && (
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
+                    AI
+                  </div>
+                  <div className="rounded-3xl rounded-tl-md p-5 bg-surface-container-lowest border border-outline-variant/20">
+                    <div className="flex items-center gap-2 text-on-surface-variant">
+                      <Loader size={16} className="animate-spin" />
+                      <span>Thinking...</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <>
-                {history.map((item, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "flex gap-4",
-                      item.type === "user" ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    {item.type === "ai" && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-medium">AI</span>
-                      </div>
-                    )}
-                    <div
-                      className={cn(
-                        "flex-1 rounded-2xl p-4 max-w-[85%] md:max-w-[75%]",
-                        item.type === "user"
-                          ? "bg-blue-600 ml-12 bg-opacity-90"
-                          : "bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 mr-12"
-                      )}
-                    >
-                      {formatMessage(item.text)}
-                    </div>
-                    {item.type === "user" && (
-                      <div className="w-8 h-8 rounded-full bg-gray-700/70 backdrop-blur-sm flex items-center justify-center shrink-0">
-                        <span className="text-xs font-medium">You</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              )}
 
-                {loading && (
-                  <div className="flex gap-4">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-medium">AI</span>
-                    </div>
-                    <div className="flex-1 rounded-2xl p-4 max-w-[85%] md:max-w-[75%] bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 mr-12">
-                      <div className="flex items-center gap-2">
-                        <Loader size={16} className="animate-spin" />
-                        <span className="text-gray-300">Thinking...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+              {error && (
+                <div className="mx-auto max-w-2xl text-red-500 text-center p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                  {error}
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </>
+          )}
+        </main>
 
-                {error && (
-                  <div className="mx-auto max-w-[85%] md:max-w-[75%]">
-                    <div className="text-red-400 text-center p-4 bg-red-500/10 border border-red-500/20 rounded-lg backdrop-blur-sm">
-                      {error}
-                    </div>
-                  </div>
-                )}
-
-                <div ref={chatEndRef} className="h-0" />
-              </>
-            )}
-          </main>
-
-          {/* Input Section - Fixed to bottom with better mobile experience */}
-          <div className="fixed bottom-0 w-full md:w-[50%] border-t border-gray-800 bg-black/70 backdrop-blur-lg p-3 z-50">
-            <form
-              onSubmit={handleQuerySubmit}
-              className="flex items-center gap-3 max-w-3xl mx-auto w-full px-2"
-            >
+        <div className="absolute bottom-0 left-0 right-0 z-20 px-4 md:px-10 pb-4 pt-3 bg-gradient-to-t from-surface via-surface/90 to-transparent">
+          <form onSubmit={handleQuerySubmit} className="max-w-4xl mx-auto">
+            <div className="rounded-2xl bg-surface-container-low border border-outline-variant/20 px-3 py-2 flex items-center gap-3">
               <input
                 type="text"
-                placeholder="Message AI..."
+                placeholder="Message AI Assistant..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 bg-gray-800/50 text-white p-2 rounded-2xl outline-none border border-gray-700/50 focus:border-gray-600/50 transition-colors placeholder-gray-400"
+                className="flex-1 bg-transparent text-on-surface placeholder:text-on-surface-variant outline-none px-2"
               />
               <Button
                 type="submit"
                 disabled={loading}
-                className={cn(
-                  "rounded-full w-10 h-10 flex items-center justify-center",
-                  loading
-                    ? "bg-gray-700/70"
-                    : "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:opacity-90"
-                )}
+                className="gradient-primary text-primary-foreground rounded-xl"
               >
                 {loading ? (
-                  <Loader size={20} className="animate-spin" />
+                  <Loader size={16} className="animate-spin" />
                 ) : (
-                  <Send size={20} />
+                  <Send size={16} />
                 )}
               </Button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

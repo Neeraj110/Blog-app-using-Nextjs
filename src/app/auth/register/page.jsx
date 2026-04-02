@@ -1,27 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog"; // ShadCN Dialog
-import axios from "axios";
-import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "react-toastify";
+import { Info, Moon, Sun } from "lucide-react";
+import {
+  useRegisterMutation,
+  useVerifyUserMutation,
+} from "@/redux/api/userApi";
 
-const formSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"), // Name validation
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(4, "Password must be at least 4 characters"),
-});
+const getInitialTheme = () => {
+  if (typeof window === "undefined") return "light";
+  const saved = window.localStorage.getItem("theme");
+  if (saved === "light" || saved === "dark") return saved;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
+
+const applyTheme = (mode) => {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (mode === "dark") {
+    root.classList.add("dark");
+  } else {
+    root.classList.remove("dark");
+  }
+  window.localStorage.setItem("theme", mode);
+};
+
+const generateUsername = (name, email) => {
+  const emailPrefix = email.split("@")[0];
+  return (
+    emailPrefix.replace(/[^a-zA-Z0-9_]/g, "_") || name.replace(/\s+/g, "_")
+  );
+};
 
 function RegisterPage() {
   const router = useRouter();
+  const [theme, setTheme] = useState("light");
+  const [isThemeReady, setIsThemeReady] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+
+  const [otp, setOtp] = useState("");
+  const [emailForOtp, setEmailForOtp] = useState("");
+
+  const [registerUser] = useRegisterMutation();
+  const [verifyUser] = useVerifyUserMutation();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,53 +60,51 @@ function RegisterPage() {
     password: "",
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  useEffect(() => {
+    const mode = getInitialTheme();
+    setTheme(mode);
+    applyTheme(mode);
+    setIsThemeReady(true);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    applyTheme(next);
   };
 
-  const generateUsername = (name, email) => {
-    const emailPrefix = email.split("@")[0];
-    // Remove any non-alphanumeric characters and replace them with underscores
-    const sanitizedUsername = emailPrefix.replace(/[^a-zA-Z0-9_]/g, "_");
-    return sanitizedUsername;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const validationResult = formSchema.safeParse(formData);
-
-    if (!validationResult.success) {
-      toast.error("Please check the form for errors.");
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error("All fields are required.");
+      return;
+    }
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const { name, email, password } = formData;
-      // Generate the username based on the name and email
-      const username = generateUsername(name, email);
+      const username = generateUsername(formData.name, formData.email);
+      await registerUser({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        username,
+      }).unwrap();
 
-      // Sending the registration data along with the generated username
-      const response = await axios.post("/api/user/register", {
-        name,
-        email,
-        password,
-        username, // Include generated username
-      });
-      if (response.status === 200) {
-        setEmail(email);
-        setIsModalOpen(true);
-        toast.success("Registration successful! Please verify your email.");
-      }
-      setIsLoading(false);
+      setEmailForOtp(formData.email);
+      setIsModalOpen(true);
+      toast.success("Registration successful. Check your email for OTP.");
     } catch (error) {
-      toast.error(
-        error.response?.data?.error || "Registration failed. Try again."
-      );
+      toast.error(error?.data?.error || "Registration failed. Try again.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -85,140 +114,240 @@ function RegisterPage() {
       toast.error("OTP must be 6 digits.");
       return;
     }
+
     setIsVerifying(true);
     try {
-      const response = await axios.post("/api/user/verifyUser", {
-        email,
-        otp,
-      });
-      if (response.status === 200) {
-        toast.success("OTP Verified Successfully!");
-        setIsModalOpen(false);
-        router.push("/auth/login");
-      } else {
-        toast.error("Invalid OTP. Please try again.");
-      }
+      await verifyUser({ email: emailForOtp, otp }).unwrap();
+      toast.success("OTP verified successfully.");
+      setIsModalOpen(false);
+      router.push("/auth/login");
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      toast.error(error?.data?.error || "Invalid OTP. Please try again.");
     } finally {
       setIsVerifying(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen relative overflow-hidden bg-gradient-to-br from-gray-900 via-black to-purple-900/20 text-white">
-      {/* Animated gradient orbs */}
-      <div className="absolute top-20 left-10 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] animate-pulse"></div>
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
-
-      <div className="w-full max-w-md p-8 rounded-3xl shadow-2xl bg-black/40 backdrop-blur-2xl border border-white/10 relative z-10 m-4">
-        <div className="text-center mb-8">
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-            Create Account
-          </h2>
-          <p className="text-gray-400">Join the SocialHub community</p>
-        </div>
-
-        <form onSubmit={onSubmit} className="space-y-5">
-          {/* Name Field */}
-          <div className="space-y-2">
-            <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-              Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Enter your name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-            />
+    <div className="bg-background font-body text-on-surface min-h-screen flex flex-col">
+      <header className="fixed top-0 w-full z-50 glass-surface border-b border-outline-variant/20">
+        <div className="flex justify-between items-center px-6 md:px-8 py-4 max-w-7xl mx-auto">
+          <div className="text-2xl font-bold tracking-tighter text-on-surface">
+            Social Next
           </div>
-
-          {/* Email Field */}
-          <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-            />
-          </div>
-
-          {/* Password Field */}
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleInputChange}
-              className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 rounded-xl shadow-lg shadow-purple-500/25 transform hover:scale-[1.02] transition-all duration-300 mt-2"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="flex justify-center items-center gap-2">
-                <div className="w-5 h-5 border-2 border-t-white border-white/30 rounded-full animate-spin"></div>
-                <span>Registering...</span>
-              </div>
-            ) : (
-              "Create Account"
-            )}
-          </Button>
-        </form>
-
-        {/* Modal for OTP Verification */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="bg-gray-900/95 backdrop-blur-xl border border-white/10 text-white rounded-2xl shadow-2xl p-8 max-w-[400px]">
-            <h2 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              Verify Your Email
-            </h2>
-            <p className="text-gray-400 text-center mb-6 text-sm">
-              Enter the 6-digit OTP sent to <span className="text-white font-medium">{email}</span>
-            </p>
-            <div className="space-y-5">
-              <input
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                maxLength={6}
-                className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-center tracking-widest text-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-gray-700 transition-all font-mono"
-              />
-              <Button
-                onClick={handleOtpVerification}
-                disabled={isVerifying}
-                className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-xl shadow-lg transform hover:scale-[1.02] transition-all"
+          <div className="flex items-center gap-4">
+            <a className="hidden md:inline text-primary font-semibold" href="#">
+              Sign Up
+            </a>
+            {isThemeReady && (
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="h-10 w-10 rounded-full bg-surface-container-low hover:bg-surface-container-high flex items-center justify-center transition-colors"
+                aria-label="Toggle theme"
               >
-                {isVerifying ? "Verifying..." : "Verify OTP"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
 
-        <p className="text-sm text-center mt-8 text-gray-400">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 hover:to-pink-400 font-semibold hover:underline decoration-purple-400/50 underline-offset-4 transition-all">
-            Sign in
-          </Link>
-        </p>
-      </div>
+      <main className="flex-grow flex items-center justify-center px-5 md:px-6 py-24">
+        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-12 md:gap-16 items-center">
+          <div className="lg:col-span-6 space-y-7">
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-highest text-primary font-semibold text-[0.7rem] uppercase tracking-wider mb-2">
+              Architect Program 2026
+            </div>
+            <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
+              Join the <span className="text-primary">Modern Architect</span>
+            </h1>
+            <p className="text-lg text-on-surface-variant max-w-md leading-relaxed">
+              Create your account to start building your professional identity
+              and join a curated network of visionary creators and engineers.
+            </p>
+            <div className="flex items-center gap-4 pt-2">
+              <div className="flex -space-x-3">
+                <img
+                  className="w-10 h-10 rounded-full border-2 border-surface object-cover"
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=120&auto=format&fit=crop"
+                  alt="User avatar"
+                />
+                <img
+                  className="w-10 h-10 rounded-full border-2 border-surface object-cover"
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=120&auto=format&fit=crop"
+                  alt="User avatar"
+                />
+                <img
+                  className="w-10 h-10 rounded-full border-2 border-surface object-cover"
+                  src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=120&auto=format&fit=crop"
+                  alt="User avatar"
+                />
+              </div>
+              <span className="text-sm font-medium text-on-surface-variant">
+                Joined by 2,000+ professionals
+              </span>
+            </div>
+          </div>
+
+          <div className="lg:col-span-6 flex justify-center lg:justify-end">
+            <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl p-8 md:p-10 shadow-[0_20px_40px_rgba(25,28,30,0.06)] border border-outline-variant/20">
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold tracking-tight mb-2">
+                  Create Account
+                </h2>
+                <p className="text-sm text-on-surface-variant">
+                  Enter your details to get started.
+                </p>
+              </div>
+
+              <form className="space-y-6" onSubmit={onSubmit}>
+                <div className="space-y-2">
+                  <label
+                    className="block text-[0.75rem] font-bold uppercase tracking-wider text-on-surface-variant"
+                    htmlFor="full_name"
+                  >
+                    Full Name
+                  </label>
+                  <input
+                    id="full_name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/30 focus:border-primary/20 transition-all"
+                    placeholder="Alex Rivera"
+                    type="text"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="block text-[0.75rem] font-bold uppercase tracking-wider text-on-surface-variant"
+                    htmlFor="email"
+                  >
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/30 focus:border-primary/20 transition-all"
+                    placeholder="alex@studio.next"
+                    type="email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="block text-[0.75rem] font-bold uppercase tracking-wider text-on-surface-variant"
+                    htmlFor="password"
+                  >
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/30 focus:border-primary/20 transition-all"
+                    placeholder="••••••••"
+                    type="password"
+                  />
+                  <p className="text-[0.7rem] text-outline mt-1 flex items-center gap-1.5">
+                    <Info size={14} />
+                    Must be at least 8 characters
+                  </p>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    className="w-full py-4 gradient-primary text-white font-bold rounded-2xl hover:opacity-90 active:scale-95 transition-all duration-200 shadow-lg shadow-primary/20 disabled:opacity-70"
+                    type="submit"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating Account..." : "Create Account"}
+                  </button>
+                </div>
+              </form>
+
+              <div className="mt-10 pt-8 border-t border-surface-container text-center">
+                <p className="text-sm text-on-surface-variant">
+                  Already have an account?
+                  <Link
+                    className="text-primary font-bold hover:underline underline-offset-4 ml-1"
+                    href="/auth/login"
+                  >
+                    Log In
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer className="w-full mt-auto bg-surface-container-low border-t border-outline-variant/20">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center px-6 md:px-12 py-10 gap-6">
+          <div className="text-sm text-on-surface-variant">
+            © 2026 Social Next. Designed for clarity.
+          </div>
+          <div className="flex flex-wrap justify-center gap-6">
+            <a
+              className="text-sm font-medium text-on-surface-variant hover:text-primary underline-offset-4 hover:underline transition-colors"
+              href="#"
+            >
+              Privacy Policy
+            </a>
+            <a
+              className="text-sm font-medium text-on-surface-variant hover:text-primary underline-offset-4 hover:underline transition-colors"
+              href="#"
+            >
+              Terms of Service
+            </a>
+            <a
+              className="text-sm font-medium text-on-surface-variant hover:text-primary underline-offset-4 hover:underline transition-colors"
+              href="#"
+            >
+              Help Center
+            </a>
+            <a
+              className="text-sm font-medium text-on-surface-variant hover:text-primary underline-offset-4 hover:underline transition-colors"
+              href="#"
+            >
+              Contact
+            </a>
+          </div>
+        </div>
+      </footer>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="bg-surface-container text-on-surface border border-outline-variant/30 rounded-2xl shadow-2xl p-8 max-w-[420px]">
+          <h2 className="text-2xl font-bold text-center mb-2">
+            Verify Your Email
+          </h2>
+          <p className="text-on-surface-variant text-center mb-6 text-sm">
+            Enter the 6-digit OTP sent to{" "}
+            <span className="text-on-surface font-medium">{emailForOtp}</span>
+          </p>
+          <div className="space-y-5">
+            <input
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+              className="w-full p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 text-center tracking-widest text-2xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-on-surface placeholder:text-on-surface-variant/40 transition-all font-mono"
+            />
+            <Button
+              onClick={handleOtpVerification}
+              disabled={isVerifying}
+              className="w-full h-12 text-lg font-semibold gradient-primary rounded-xl shadow-lg"
+            >
+              {isVerifying ? "Verifying..." : "Verify OTP"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

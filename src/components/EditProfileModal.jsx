@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -11,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
+import { useUpdateUserMutation } from "@/redux/api/userApi";
 
 const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [updateUser, { isLoading: isSubmitting }] = useUpdateUserMutation();
   const [formState, setFormState] = useState({
     name: user?.name || "",
     about: user?.description?.about || "",
@@ -33,7 +33,6 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("name", formState.name);
@@ -49,32 +48,27 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
         formData.append("coverImg", formState.coverImg);
       }
 
-      await axios.patch("/api/user/update-user", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await updateUser(formData).unwrap();
       refetchProfile();
       onClose();
       toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
-    } finally {
-      setIsSubmitting(false);
+      toast.error(error?.data?.error || "Failed to update profile");
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w w-[89%] h-[90vh] overflow-y-auto rounded-3xl md:rounded-3xl bg-gradient-to-br from-gray-900 to-black text-white shadow-xl border border-gray-800">
+      <DialogContent className="max-w w-[89%] h-[90vh] overflow-y-auto rounded-3xl bg-surface-container-low text-on-surface shadow-xl border border-outline-variant/20">
         <DialogHeader>
-          <DialogTitle className="text-white">Edit Profile</DialogTitle>
-          <DialogClose className="text-white hover:text-gray-300" />
+          <DialogTitle className="text-on-surface">Edit Profile</DialogTitle>
+          <DialogClose className="text-on-surface-variant hover:text-on-surface" />
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-white">
+            <Label htmlFor="name" className="text-on-surface-variant">
               Name
             </Label>
             <Input
@@ -82,13 +76,13 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
               name="name"
               value={formState.name}
               onChange={handleInputChange}
-              className="rounded-[10px] bg-gray-800 text-white border-gray-700 focus:border-gray-600"
+              className="rounded-[10px] bg-surface-container-lowest text-on-surface border-outline-variant/20 focus:border-primary/30"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="about" className="text-white">
+            <Label htmlFor="about" className="text-on-surface-variant">
               About
             </Label>
             <Input
@@ -96,12 +90,12 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
               name="about"
               value={formState.about}
               onChange={handleInputChange}
-              className="rounded-[10px] bg-gray-800 text-white border-gray-700 focus:border-gray-600"
+              className="rounded-[10px] bg-surface-container-lowest text-on-surface border-outline-variant/20 focus:border-primary/30"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location" className="text-white">
+            <Label htmlFor="location" className="text-on-surface-variant">
               Location
             </Label>
             <Input
@@ -109,12 +103,12 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
               name="location"
               value={formState.location}
               onChange={handleInputChange}
-              className="rounded-[10px] bg-gray-800 text-white border-gray-700 focus:border-gray-600"
+              className="rounded-[10px] bg-surface-container-lowest text-on-surface border-outline-variant/20 focus:border-primary/30"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="link" className="text-white">
+            <Label htmlFor="link" className="text-on-surface-variant">
               Website
             </Label>
             <Input
@@ -122,12 +116,12 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
               name="link"
               value={formState.link}
               onChange={handleInputChange}
-              className="rounded-[10px] bg-gray-800 text-white border-gray-700 focus:border-gray-600"
+              className="rounded-[10px] bg-surface-container-lowest text-on-surface border-outline-variant/20 focus:border-primary/30"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="avatar" className="text-white">
+            <Label htmlFor="avatar" className="text-on-surface-variant">
               Avatar
             </Label>
             <Input
@@ -136,12 +130,12 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
               name="avatar"
               onChange={handleInputChange}
               accept="image/*"
-              className="rounded-[10px] bg-gray-800 text-white border-gray-700 focus:border-gray-600"
+              className="rounded-[10px] bg-surface-container-lowest text-on-surface border-outline-variant/20 focus:border-primary/30"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="coverImg" className="text-white">
+            <Label htmlFor="coverImg" className="text-on-surface-variant">
               Cover Image
             </Label>
             <Input
@@ -150,7 +144,7 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
               name="coverImg"
               onChange={handleInputChange}
               accept="image/*"
-              className="rounded-[10px] bg-gray-800 text-white border-gray-700 focus:border-gray-600"
+              className="rounded-[10px] bg-surface-container-lowest text-on-surface border-outline-variant/20 focus:border-primary/30"
             />
           </div>
 
@@ -159,14 +153,14 @@ const EditProfileModal = ({ isOpen, onClose, user, refetchProfile }) => {
               type="button"
               variant="outline"
               onClick={onClose}
-              className="rounded-[10px] bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
+              className="rounded-[10px] bg-surface-container-low text-on-surface border-outline-variant/20 hover:bg-surface-container"
               disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="rounded-[10px] bg-blue-600 text-white hover:bg-blue-700"
+              className="rounded-[10px] gradient-primary text-primary-foreground hover:opacity-90"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : "Save Changes"}

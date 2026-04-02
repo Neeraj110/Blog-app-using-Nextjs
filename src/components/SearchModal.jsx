@@ -7,60 +7,50 @@ import {
 } from "@/components/ui/dialog";
 import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
-import { X } from "lucide-react";
 import { useDebounce } from "@/helper/useDebounced";
 import UserCard from "@/components/userCard";
-import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useGetAllUsersQuery,
+  useLazySearchUsersQuery,
+} from "@/redux/api/userApi";
 
 const SearchModal = ({ isOpen, onClose }) => {
   const [name, setName] = useState("");
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   const debouncedName = useDebounce(name, 300);
-
-  const loadUsers = useCallback(async (searchQuery) => {
-    setLoading(true);
-    try {
-      const response = searchQuery
-        ? await axios.get(`/api/user/search-user/${searchQuery}`)
-        : await axios.get("/api/user/fetch-alluser");
-
-      setUsers(response.data.users || []);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: allUsersData, isFetching: isFetchingAllUsers } =
+    useGetAllUsersQuery(undefined, {
+      skip: !!debouncedName,
+    });
+  const [searchUsers, { data: searchedUsersData, isFetching: isSearching }] =
+    useLazySearchUsersQuery();
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
-
-  useEffect(() => {
-    if (debouncedName !== "") {
-      loadUsers(debouncedName);
+    if (debouncedName) {
+      searchUsers(debouncedName);
     }
-  }, [debouncedName, loadUsers]);
+  }, [debouncedName, searchUsers]);
+
+  const users = debouncedName
+    ? searchedUsersData?.users || []
+    : allUsersData?.users || [];
+  const loading = debouncedName ? isSearching : isFetchingAllUsers;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className=" h-[85vh] w-[95vw]  bg-black text-white border-0">
+      <DialogContent className="h-[85vh] w-[95vw] bg-surface-container-low text-on-surface border border-outline-variant/20 rounded-2xl">
         {/* Header */}
         <DialogHeader className="py-2">
-        <DialogClose></DialogClose>
+          <DialogClose></DialogClose>
           <DialogTitle className="text-lg font-bold">
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Search users..."
-              className="w-full rounded-full bg-gray-800 border-gray-700 text-white px-4 py-3 focus:border-gray-600 focus:ring-gray-600 placeholder:text-gray-500"
+              className="w-full rounded-full bg-surface-container-lowest border-outline-variant/20 text-on-surface px-4 py-3 focus:border-primary/30 focus:ring-primary/30 placeholder:text-on-surface-variant"
             />
           </DialogTitle>
-          
         </DialogHeader>
 
         {/* Users List */}
@@ -91,7 +81,9 @@ const SearchModal = ({ isOpen, onClose }) => {
             ))
           ) : (
             <div className="flex flex-col items-center justify-center py-8">
-              <p className="text-gray-400 text-base">No users found</p>
+              <p className="text-on-surface-variant text-base">
+                No users found
+              </p>
             </div>
           )}
         </div>

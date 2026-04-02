@@ -18,26 +18,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImagePlus, X, Loader2 } from "lucide-react";
+import { ImagePlus, X, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import Image from "next/image";
-import axios from "axios";
+import { useUpdatePostMutation } from "@/redux/api/postsApi";
 
-const EditPostModal = ({ isOpen, onClose, post, fetchPosts }) => {
+const EditPostModal = ({ isOpen, onClose, post }) => {
   const [content, setContent] = useState(post?.content || "");
   const [media, setMedia] = useState([]);
   const [existingMedia, setExistingMedia] = useState(post?.media || []);
   const [tags, setTags] = useState(post?.tags?.join(", ") || "");
   const [visibility, setVisibility] = useState(post?.visibility || "public");
-  const [isLoading, setIsLoading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState([]);
+  const [validationErrors, setValidationErrors] = useState(null);
+
+  const [updatePost, { isLoading, error }] = useUpdatePostMutation();
 
   useEffect(() => {
     setContent(post?.content || "");
     setExistingMedia(post?.media || []);
     setTags(post?.tags?.join(", ") || "");
     setVisibility(post?.visibility || "public");
-  }, [post]);
+    setValidationErrors(null);
+    setMedia([]);
+    setPreviewUrls([]);
+  }, [post, isOpen]);
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -74,50 +79,84 @@ const EditPostModal = ({ isOpen, onClose, post, fetchPosts }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setValidationErrors(null);
+
+    // Validation
+    if (!content.trim()) {
+      setValidationErrors("Content cannot be empty");
+      toast.error("Content cannot be empty");
+      return;
+    }
+
+    if (content.length > 500) {
+      setValidationErrors("Content cannot exceed 500 characters");
+      toast.error("Content cannot exceed 500 characters");
+      return;
+    }
 
     try {
       const formData = new FormData();
       formData.append("content", content);
       formData.append("visibility", visibility);
       formData.append("tags", tags);
-      formData.append("existingMedia", JSON.stringify(existingMedia)); // Add this line
+      formData.append("existingMedia", JSON.stringify(existingMedia));
 
       media.forEach((file) => {
         formData.append("media", file);
       });
 
-      const { data } = await axios.patch(
-        `/api/post/update-post/${post._id}`,
+      // RTK Query mutation - returns a Promise
+      await updatePost({
+        postId: post._id,
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      }).unwrap();
 
-      await fetchPosts();
+      // Clear form and close on success
+      setContent("");
+      setMedia([]);
+      setExistingMedia([]);
+      setTags("");
+      setVisibility("public");
+      setPreviewUrls([]);
       toast.success("Post updated successfully");
       onClose();
-    } catch (error) {
-      console.error("Error updating post:", error);
-      toast.error("An error occurred while updating the post");
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      // Error is handled by RTK Query and error state
+      const errorMessage =
+        err?.data?.message ||
+        err?.message ||
+        "An error occurred while updating the post. Please try again.";
+      setValidationErrors(errorMessage);
+      toast.error(errorMessage);
+      console.error("Error updating post:", err);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]  w-[95%] rounded-xl bg-gradient-to-b from-gray-900 to-gray-800 border border-gray-700 h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] w-[95%] rounded-2xl bg-surface-container-low border border-outline-variant/20 h-[85vh] overflow-y-auto text-on-surface">
         <DialogHeader className="px-6 pt-6">
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+          <DialogTitle className="text-2xl font-bold text-on-surface">
             Edit Post
           </DialogTitle>
         </DialogHeader>
 
+        {(validationErrors || error) && (
+          <div className="px-6 py-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 mb-4">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-red-400">
+                {validationErrors ||
+                  error?.data?.message ||
+                  "An error occurred"}
+              </p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6 px-6">
           <div className="space-y-3">
-            <Label htmlFor="content" className="text-gray-200">
+            <Label htmlFor="content" className="text-on-surface-variant">
               Content
             </Label>
             <Textarea
@@ -125,16 +164,16 @@ const EditPostModal = ({ isOpen, onClose, post, fetchPosts }) => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's on your mind?"
-              className="min-h-[120px] bg-gray-800/50 border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="min-h-[120px] bg-surface-container-lowest border-outline-variant/20 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary/30"
               maxLength={500}
             />
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-on-surface-variant">
               {content.length}/500 characters
             </div>
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="media" className="text-gray-200">
+            <Label htmlFor="media" className="text-on-surface-variant">
               Media
             </Label>
             <div className="flex flex-wrap gap-3">
@@ -190,7 +229,7 @@ const EditPostModal = ({ isOpen, onClose, post, fetchPosts }) => {
                 </div>
               ))}
               {existingMedia.length + media.length < 3 && (
-                <label className="w-24 h-24 flex items-center justify-center border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 hover:bg-gray-800/30 transition-colors">
+                <label className="w-24 h-24 flex items-center justify-center border-2 border-dashed border-outline-variant/30 rounded-lg cursor-pointer hover:border-primary/40 hover:bg-surface-container-lowest transition-colors">
                   <input
                     type="file"
                     accept="image/*,video/*"
@@ -198,14 +237,14 @@ const EditPostModal = ({ isOpen, onClose, post, fetchPosts }) => {
                     className="hidden"
                     multiple
                   />
-                  <ImagePlus className="w-8 h-8 text-gray-400" />
+                  <ImagePlus className="w-8 h-8 text-on-surface-variant" />
                 </label>
               )}
             </div>
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="tags" className="text-gray-200">
+            <Label htmlFor="tags" className="text-on-surface-variant">
               Tags
             </Label>
             <Input
@@ -213,19 +252,19 @@ const EditPostModal = ({ isOpen, onClose, post, fetchPosts }) => {
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="Enter tags, separated by commas"
-              className="bg-gray-800/50 border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="bg-surface-container-lowest border-outline-variant/20 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary/30"
             />
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="visibility" className="text-gray-200">
+            <Label htmlFor="visibility" className="text-on-surface-variant">
               Visibility
             </Label>
             <Select value={visibility} onValueChange={setVisibility}>
-              <SelectTrigger className="bg-gray-800/50 border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <SelectTrigger className="bg-surface-container-lowest border-outline-variant/20 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary/30">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="bg-surface-container border-outline-variant/20 text-on-surface">
                 <SelectItem value="public">Public</SelectItem>
                 <SelectItem value="private">Private</SelectItem>
                 <SelectItem value="followers">Followers Only</SelectItem>
@@ -239,7 +278,7 @@ const EditPostModal = ({ isOpen, onClose, post, fetchPosts }) => {
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="bg-transparent border-gray-600 hover:bg-gray-800 text-gray-200"
+              className="bg-transparent border-outline-variant/30 hover:bg-surface-container text-on-surface"
             >
               Cancel
             </Button>

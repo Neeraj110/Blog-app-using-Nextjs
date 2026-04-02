@@ -22,7 +22,7 @@ async function verifyToken(token) {
   }
 }
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = new URL(request.url);
 
   // Public routes that don't require authentication
@@ -44,7 +44,7 @@ export async function middleware(request) {
     if (!token) {
       return NextResponse.json(
         { error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -67,7 +67,7 @@ export async function middleware(request) {
     } catch (error) {
       return NextResponse.json(
         { error: "Invalid authentication token" },
-        { status: 401 }
+        { status: 401 },
       );
     }
   }
@@ -91,7 +91,7 @@ export async function middleware(request) {
       return NextResponse.next();
     } catch (error) {
       const response = NextResponse.redirect(
-        new URL("/auth//login", request.url)
+        new URL("/auth//login", request.url),
       );
       response.cookies.set("authToken", "", {
         httpOnly: true,
@@ -114,7 +114,7 @@ export const config = {
     "/api/post/:path*",
     "/api/message/:path*",
     "/api/notification/:path*",
-    "/api/socket/:path*", 
-    "/api/socket.io/:path*", 
+    "/api/socket/:path*",
+    "/api/socket.io/:path*",
   ],
 };

@@ -18,7 +18,7 @@ function UserCard({ user, mobile, onClose }) {
 
   useEffect(() => {
     const following = userInfo?.following?.some(
-      (followedUser) => followedUser._id === user._id
+      (followedUser) => followedUser._id === user._id,
     );
     setIsFollowing(following || false);
   }, [userInfo, user]);
@@ -28,7 +28,7 @@ function UserCard({ user, mobile, onClose }) {
       user._id,
       isFollowing,
       dispatch,
-      setCredential
+      setCredential,
     );
     setIsFollowing(newStatus);
   };
@@ -70,7 +70,7 @@ function UserCard({ user, mobile, onClose }) {
   };
 
   return (
-    <div className="flex items-center space-x-4 p-3 hover:bg-gray-800/50 hover:rounded transition-colors">
+    <div className="flex items-center space-x-4 p-3 rounded-xl hover:bg-surface-container-high transition-colors">
       <div
         onClick={handleProfileClick}
         className="relative w-10 h-10 flex-shrink-0 cursor-pointer"
@@ -87,17 +87,21 @@ function UserCard({ user, mobile, onClose }) {
         className="flex-1 min-w-0 cursor-pointer"
         onClick={handleProfileClick}
       >
-        <p className="text-white font-medium truncate">{user.name}</p>
+        <p className="text-on-surface font-semibold truncate tracking-tight">
+          {user.name}
+        </p>
         {user.username && (
-          <p className="text-gray-400 text-sm truncate">@{user.username}</p>
+          <p className="text-on-surface-variant text-sm truncate">
+            @{user.username}
+          </p>
         )}
       </div>
       {!mobile && (
         <Button
           onClick={followBtn}
           variant="outline"
-          className={`rounded-full bg-white border border-white hover:bg-blue-500/10 ${
-            isFollowing ? "bg-black text-blue-500" : "text-black"
+          className={`rounded-full border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-high text-on-surface ${
+            isFollowing ? "text-primary" : ""
           }`}
         >
           {isFollowing ? "Unfollow" : "Follow"}

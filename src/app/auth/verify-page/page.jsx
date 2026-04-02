@@ -3,12 +3,14 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button"; // Assuming you are using ShadCN for UI
-import axios from "axios";
+import { useVerifyUserMutation } from "@/redux/api/userApi";
 
 function VerifyPage() {
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [verifyUser] = useVerifyUserMutation();
 
   // Handle OTP input change
   const handleOtpChange = (e) => {
@@ -18,22 +20,24 @@ function VerifyPage() {
   // Handle OTP submission
   const handleVerify = async (e) => {
     e.preventDefault();
+    if (!email.trim()) {
+      toast.error("Email is required.");
+      return;
+    }
     if (otp.length !== 6) {
       toast.error("OTP must be 6 digits.");
       return;
     }
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/user/verifyUser", otp);
-      if (response.status === 200) {
-        toast.success("OTP Verified Successfully");
-        router.push("/auth/login");
-      } else {
-        toast.error("Invalid OTP. Please try again.");
-      }
+      await verifyUser({ email, otp }).unwrap();
+      toast.success("OTP Verified Successfully");
+      router.push("/auth/login");
     } catch (error) {
       console.error("OTP Verification Failed:", error);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(
+        error?.data?.error || "Something went wrong. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +52,23 @@ function VerifyPage() {
           </p>
         </div>
         <form onSubmit={handleVerify} className="mt-6 space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-300"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className="block w-full px-3 py-2 border border-gray-500 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
           <div className="space-y-2">
             <label
               htmlFor="otp"

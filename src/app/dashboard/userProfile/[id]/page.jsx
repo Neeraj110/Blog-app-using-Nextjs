@@ -5,7 +5,6 @@ import { MapPin, Calendar, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import FollowModal from "@/components/FollowModal";
 import EditProfileModal from "@/components/EditProfileModal";
 import { setCredential } from "@/redux/slices/authSlice";
@@ -13,6 +12,11 @@ import { formatJoinDate } from "@/helper/dateUtils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { handleFollow } from "@/helper/followActions";
 import PostCard from "@/components/PostCard";
+import {
+  useFollowUserMutation,
+  useLazyGetProfileQuery,
+  useLazyGetUserProfileQuery,
+} from "@/redux/api/userApi";
 
 const UserProfile = () => {
   const { id } = useParams();
@@ -23,11 +27,14 @@ const UserProfile = () => {
   const [editProfileDialog, setEditProfileDialog] = useState(false);
   const dispatch = useDispatch();
   const [isFollowing, setIsFollowing] = useState(false);
+  const [triggerGetUserProfile] = useLazyGetUserProfileQuery();
+  const [triggerGetProfile] = useLazyGetProfileQuery();
+  const [followUser] = useFollowUserMutation();
 
   useEffect(() => {
     if (!user || !userInfo) return; // Ensure user and userInfo are available
     const following = userInfo.following?.some(
-      (followedUser) => followedUser._id === user._id
+      (followedUser) => followedUser._id === user._id,
     );
     setIsFollowing(following || false);
   }, [userInfo, user]);
@@ -35,8 +42,8 @@ const UserProfile = () => {
   const fetchUserProfile = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/user/user-profile/${id}`);
-      setUser(response.data.user);
+      const response = await triggerGetUserProfile(id).unwrap();
+      setUser(response.user);
     } catch (error) {
       console.error("Failed to fetch user profile:", error);
     } finally {
@@ -49,13 +56,16 @@ const UserProfile = () => {
   }, [id, userInfo]);
 
   const handleFollowBtn = async () => {
-    const newStatus = await handleFollow(
-      user._id,
-      isFollowing,
-      dispatch,
-      setCredential
-    );
-    setIsFollowing(newStatus);
+    try {
+      const followResult = await followUser(user._id).unwrap();
+      setIsFollowing(!!followResult?.isFollowing);
+
+      const profileRes = await triggerGetProfile().unwrap();
+      dispatch(setCredential(profileRes.user));
+      fetchUserProfile();
+    } catch (error) {
+      console.error("Failed to update follow status", error);
+    }
   };
 
   if (loading) {

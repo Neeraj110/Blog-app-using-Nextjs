@@ -18,14 +18,14 @@ const FollowModal = ({ type, isOpen, onClose, user }) => {
 
   const handleFollowClick = async (follower) => {
     const isCurrentlyFollowing = userInfo.following.some(
-      (u) => u._id === follower._id
+      (u) => u._id === follower._id,
     );
 
     await handleFollow(
       follower._id,
       isCurrentlyFollowing,
       dispatch,
-      setCredential
+      setCredential,
     );
   };
 
@@ -33,12 +33,12 @@ const FollowModal = ({ type, isOpen, onClose, user }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[87%] md:w-[38%] w-[85%] overflow-y-auto rounded-3xl md:rounded-3xl bg-gradient-to-br from-gray-900 to-black text-white shadow-xl border border-gray-800">
+      <DialogContent className="sm:max-w-[87%] md:w-[38%] w-[85%] overflow-y-auto rounded-3xl bg-surface-container-low text-on-surface shadow-xl border border-outline-variant/20">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             {type === "followers" ? "Followers" : "Following"}
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-400">
+          <DialogDescription className="text-sm text-on-surface-variant">
             {type === "followers"
               ? "People who follow you."
               : "People you are following."}
@@ -48,13 +48,13 @@ const FollowModal = ({ type, isOpen, onClose, user }) => {
         <div className="max-h-96 overflow-y-auto">
           {userList?.map((follower, index) => {
             const isCurrentlyFollowing = userInfo.following.some(
-              (u) => u._id === follower._id
+              (u) => u._id === follower._id,
             );
 
             return (
               <div
                 key={follower._id || index}
-                className="flex items-center justify-between p-4 hover:bg-gray-900/50 cursor-pointer"
+                className="flex items-center justify-between p-4 hover:bg-surface-container cursor-pointer rounded-xl"
               >
                 {/* User Info */}
                 <div className="flex items-center gap-3">
@@ -62,7 +62,7 @@ const FollowModal = ({ type, isOpen, onClose, user }) => {
                     src={
                       follower.avatar ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        follower.name
+                        follower.name,
                       )}`
                     }
                     alt={`${follower.name}'s avatar`}
@@ -71,7 +71,7 @@ const FollowModal = ({ type, isOpen, onClose, user }) => {
                   <div>
                     <p className="font-semibold">{follower.name}</p>
                     <p
-                      className="text-sm text-gray-400 overflow-hidden whitespace-nowrap text-ellipsis"
+                      className="text-sm text-on-surface-variant overflow-hidden whitespace-nowrap text-ellipsis"
                       title={`@${follower.username}`} // Shows full text on hover
                     >
                       @{follower.username}
@@ -85,8 +85,8 @@ const FollowModal = ({ type, isOpen, onClose, user }) => {
                   onClick={() => handleFollowClick(follower)}
                   className={`${
                     isCurrentlyFollowing
-                      ? "bg-black text-blue-500"
-                      : "text-white"
+                      ? "bg-surface-container text-primary border-outline-variant/20"
+                      : "text-on-surface border-outline-variant/20"
                   }`}
                 >
                   {isCurrentlyFollowing ? "Unfollow" : "Follow"}

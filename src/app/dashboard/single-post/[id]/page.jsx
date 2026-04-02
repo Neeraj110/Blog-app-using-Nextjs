@@ -79,7 +79,7 @@ function SinglePost() {
                   src={
                     comment.user.avatar ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      comment.user.name || "User"
+                      comment.user.name || "User",
                     )}`
                   }
                   alt={comment.user.name || "User Avatar"}
@@ -112,7 +112,6 @@ function SinglePost() {
         isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         post={post}
-        fetchPosts={fetchSinglePost}
       />
     </div>
   );

@@ -1,46 +1,55 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ChevronRight } from "lucide-react";
 import { useDebounce } from "@/helper/useDebounced";
 import UserCard from "@/components/userCard";
-import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useGetAllUsersQuery,
+  useLazySearchUsersQuery,
+} from "@/redux/api/userApi";
 
 function RightBar() {
   const [name, setName] = useState("");
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const trendingTags = [
+    "#NextJS",
+    "#FullStack",
+    "#OpenSource",
+    "#DevTools",
+    "#AIUX",
+    "#BuildInPublic",
+  ];
+
+  const footerLinks = [
+    "Terms",
+    "Privacy",
+    "Cookies",
+    "Accessibility",
+    "Ads",
+    "More",
+  ];
 
   const debouncedName = useDebounce(name, 300);
+  const { data: allUsersData, isFetching: isFetchingAllUsers } =
+    useGetAllUsersQuery(undefined, {
+      skip: !!debouncedName,
+    });
 
-  const loadUsers = useCallback(async (searchQuery) => {
-    setLoading(true);
-    try {
-      const response = searchQuery
-        ? await axios.get(`/api/user/search-user/${searchQuery}`)
-        : await axios.get("/api/user/fetch-alluser");
-
-      const usersData = response.data.users || [];
-      setUsers(usersData);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [searchUsers, { data: searchedUsersData, isFetching: isSearching }] =
+    useLazySearchUsersQuery();
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
-
-  useEffect(() => {
-    if (debouncedName !== "") {
-      loadUsers(debouncedName);
+    if (debouncedName) {
+      searchUsers(debouncedName);
     }
-  }, [debouncedName, loadUsers]);
+  }, [debouncedName, searchUsers]);
+
+  const users = debouncedName
+    ? searchedUsersData?.users || []
+    : allUsersData?.users || [];
+  const loading = debouncedName ? isSearching : isFetchingAllUsers;
 
   const userList = useMemo(() => {
     if (loading) {
@@ -74,40 +83,81 @@ function RightBar() {
 
     return (
       <div className="text-center py-4">
-        <p className="text-gray-400 text-sm">No users found</p>
+        <p className="text-on-surface-variant text-sm">No users found</p>
       </div>
     );
   }, [users, loading]);
 
   return (
-    <div className="w-[96%] h-screen border-l border-gray-800">
+    <aside className="w-full h-screen">
       <div className="h-full flex flex-col">
-        {/* Fixed Search Header */}
-        <div className="sticky top-0 bg-black/80 backdrop-blur-md px-3 py-1.5 z-10">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
-              <Search className="text-gray-400 w-4 h-4" />
+        <div className="sticky top-0 glass-surface px-4 py-4 z-10">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <Search className="text-on-surface-variant w-4 h-4" />
             </div>
             <Input
               placeholder="Search users..."
-              className="w-full bg-gray-900 border-gray-800 pl-8 pr-3 py-2 rounded-full
-                      text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1
-                      focus:ring-blue-500 transition-all"
+              className="w-full bg-surface-container-lowest border-outline-variant/30 pl-10 pr-3 py-2.5 rounded-full text-sm text-on-surface placeholder:text-on-surface-variant focus:border-primary/40 focus:ring-1 focus:ring-primary/30 transition-all"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="px-3 py-2">
-            <h2 className="text-lg font-bold text-white mb-2">Who to follow</h2>
-            <div className="space-y-1">{userList}</div>
+          <div className="px-4 py-4 space-y-4">
+            <section className="editorial-panel rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-on-surface">
+                  Trends For You
+                </h3>
+                <button className="text-primary text-sm hover:underline">
+                  See all
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {trendingTags.map((tag) => (
+                  <button
+                    key={tag}
+                    className="rounded-full px-3 py-1.5 text-xs font-medium bg-surface-container-lowest text-on-surface-variant hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="editorial-panel rounded-2xl p-4 space-y-3">
+              <h2 className="text-base font-semibold text-on-surface">
+                Who to follow
+              </h2>
+              <div className="space-y-2">{userList}</div>
+              <button className="w-full flex items-center justify-between text-primary text-sm font-medium pt-1 hover:underline">
+                Discover more
+                <ChevronRight size={16} />
+              </button>
+            </section>
+
+            <section className="px-2 pb-4">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-on-surface-variant">
+                {footerLinks.map((link) => (
+                  <button
+                    key={link}
+                    className="hover:text-primary transition-colors"
+                  >
+                    {link}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-on-surface-variant mt-2">
+                Codeverse @ 2024
+              </p>
+            </section>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
 

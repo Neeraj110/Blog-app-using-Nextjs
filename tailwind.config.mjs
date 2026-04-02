@@ -1,78 +1,88 @@
 /** @type {import('tailwindcss').Config} */
 const config = {
-	darkMode: ["class"], // Enables dark mode with class-based toggling
-	content: [
-	  "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-	  "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-	  "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-	],
-	theme: {
-	  extend: {
-		// Define animations
-		keyframes: {
-		  "caret-blink": {
-			"0%, 70%, 100%": { opacity: "1" },
-			"20%, 50%": { opacity: "0" },
-		  },
-		},
-		animation: {
-		  "caret-blink": "caret-blink 1.25s ease-out infinite",
-		},
-		// Extend color palette using CSS variables
-		colors: {
-		  background: "hsl(var(--background))",
-		  foreground: "hsl(var(--foreground))",
-		  card: {
-			DEFAULT: "hsl(var(--card))",
-			foreground: "hsl(var(--card-foreground))",
-		  },
-		  popover: {
-			DEFAULT: "hsl(var(--popover))",
-			foreground: "hsl(var(--popover-foreground))",
-		  },
-		  primary: {
-			DEFAULT: "hsl(var(--primary))",
-			foreground: "hsl(var(--primary-foreground))",
-		  },
-		  secondary: {
-			DEFAULT: "hsl(var(--secondary))",
-			foreground: "hsl(var(--secondary-foreground))",
-		  },
-		  muted: {
-			DEFAULT: "hsl(var(--muted))",
-			foreground: "hsl(var(--muted-foreground))",
-		  },
-		  accent: {
-			DEFAULT: "hsl(var(--accent))",
-			foreground: "hsl(var(--accent-foreground))",
-		  },
-		  destructive: {
-			DEFAULT: "hsl(var(--destructive))",
-			foreground: "hsl(var(--destructive-foreground))",
-		  },
-		  border: "hsl(var(--border))",
-		  input: "hsl(var(--input))",
-		  ring: "hsl(var(--ring))",
-		  chart: {
-			"1": "hsl(var(--chart-1))",
-			"2": "hsl(var(--chart-2))",
-			"3": "hsl(var(--chart-3))",
-			"4": "hsl(var(--chart-4))",
-			"5": "hsl(var(--chart-5))",
-		  },
-		},
-		// Extend border-radius using CSS variables
-		borderRadius: {
-		  lg: "var(--radius)",
-		  md: "calc(var(--radius) - 2px)",
-		  sm: "calc(var(--radius) - 4px)",
-		},
-	  },
-	},
-	plugins: [
-	  require("tailwindcss-animate"), // Include animate plugin for utilities
-	],
-  };
-  
-  export default config;
-  
+  darkMode: ["class"], // Enables dark mode with class-based toggling
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      // Define animations
+      keyframes: {
+        "caret-blink": {
+          "0%, 70%, 100%": { opacity: "1" },
+          "20%, 50%": { opacity: "0" },
+        },
+      },
+      animation: {
+        "caret-blink": "caret-blink 1.25s ease-out infinite",
+      },
+      // Extend color palette using CSS variables
+      colors: {
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        surface: "hsl(var(--surface))",
+        "surface-bright": "hsl(var(--surface-bright))",
+        "surface-container-lowest": "hsl(var(--surface-container-lowest))",
+        "surface-container-low": "hsl(var(--surface-container-low))",
+        "surface-container": "hsl(var(--surface-container))",
+        "surface-container-high": "hsl(var(--surface-container-high))",
+        "surface-container-highest": "hsl(var(--surface-container-highest))",
+        "on-surface": "hsl(var(--on-surface))",
+        "on-surface-variant": "hsl(var(--on-surface-variant))",
+        "outline-variant": "hsl(var(--outline-variant))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+          container: "hsl(var(--primary-container))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
+        },
+      },
+      // Extend border-radius using CSS variables
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+    },
+  },
+  plugins: [
+    require("tailwindcss-animate"), // Include animate plugin for utilities
+  ],
+};
+
+export default config;

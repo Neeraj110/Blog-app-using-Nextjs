@@ -6,38 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import FollowModal from "@/components/FollowModal";
 import EditProfileModal from "@/components/EditProfileModal";
 import { setCredential } from "@/redux/slices/authSlice";
 import { formatJoinDate } from "@/helper/dateUtils";
 import PostCard from "@/components/PostCard";
+import { useGetProfileQuery } from "@/redux/api/userApi";
 
 const Profile = () => {
-  const [user, setUser] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [followDialog, setFollowDialog] = useState(null);
   const [editProfileDialog, setEditProfileDialog] = useState(false);
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.auth);
-
-  const fetchProfile = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get("/api/user/profile");
-      setUser(response.data.user);
-      dispatch(setCredential(response.data.user));
-    } catch (error) {
-      setError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: profileData,
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useGetProfileQuery();
+  const user = profileData?.user;
 
   useEffect(() => {
-    if (!user) {
-      fetchProfile();
+    if (user) {
+      dispatch(setCredential(user));
     }
   }, [dispatch, user]);
 
@@ -59,7 +50,7 @@ const Profile = () => {
     );
   }
 
-  if (!user) {
+  if (!user || isError) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <p className="text-gray-500">User not found</p>
@@ -68,7 +59,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="w-full bg-black text-white">
+    <div className="w-full bg-surface text-on-surface">
       <div className="relative h-[10rem] sm:h-[16rem]">
         {user.coverImg ? (
           <img
@@ -91,7 +82,7 @@ const Profile = () => {
                 user.avatar || `https://ui-avatars.com/api/?name=${user.name}`
               }
               alt={user.name}
-              className="md:w-32 md:h-32 w-28 h-28 rounded-full border-4 border-black bg-white"
+              className="md:w-32 md:h-32 w-28 h-28 rounded-3xl border-4 border-surface bg-surface-container-lowest"
             />
           </div>
 
@@ -100,7 +91,7 @@ const Profile = () => {
             <Button
               onClick={() => setEditProfileDialog(true)}
               variant="outline"
-              className="rounded-full"
+              className="rounded-full border-outline-variant/30 bg-surface-container-lowest"
             >
               Edit profile
             </Button>
@@ -110,16 +101,16 @@ const Profile = () => {
         {/* Profile Info */}
         <div className="mt-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">{user.name}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
           </div>
-          <p className="text-gray-500 text-sm">@{user.username}</p>
+          <p className="text-on-surface-variant text-sm">@{user.username}</p>
         </div>
 
         {/* Bio */}
-        <p className="mt-4 text-sm">{user.description.about}</p>
+        <p className="mt-4 text-sm leading-relaxed">{user.description.about}</p>
 
         {/* Details */}
-        <div className="mt-4 flex flex-wrap  flex-col space-y-1 gap-x-4 gap-y-2 text-sm text-gray-500">
+        <div className="mt-4 flex flex-wrap flex-col space-y-1 gap-x-4 gap-y-2 text-sm text-on-surface-variant">
           {user.description.location && (
             <span className="flex items-center gap-1">
               <MapPin size={16} />
@@ -135,7 +126,7 @@ const Profile = () => {
               href={user.description.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-blue-400 hover:underline"
+              className="flex items-center gap-1 text-primary hover:underline"
             >
               <LinkIcon size={16} />
               {user.description.link.replace(/(^\w+:|^)\/\//, "")}
@@ -147,39 +138,39 @@ const Profile = () => {
         <div className="mt-4 flex gap-4 text-sm">
           <Button
             onClick={() => setFollowDialog("following")}
-            className="hover:bg-gray-800 rounded hover:text-white"
+            className="hover:bg-surface-container rounded hover:text-on-surface bg-transparent"
           >
             <span className="font-bold">{user.following?.length || 0}</span>{" "}
-            <span className="text-gray-500">Following</span>
+            <span className="text-on-surface-variant">Following</span>
           </Button>
           <Button
             onClick={() => setFollowDialog("followers")}
-            className="hover:bg-gray-800 rounded hover:text-white"
+            className="hover:bg-surface-container rounded hover:text-on-surface bg-transparent"
           >
             <span className="font-bold">{user.followers?.length || 0}</span>{" "}
-            <span className="text-gray-500">Followers</span>
+            <span className="text-on-surface-variant">Followers</span>
           </Button>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="posts" className="mt-4">
-          <TabsList className="w-full justify-start border-b border-gray-800 bg-transparent">
+          <TabsList className="w-full justify-start border-b border-outline-variant/20 bg-transparent">
             <TabsTrigger
               value="posts"
-              className="flex-1 text-gray-500 hover:text-white data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
+              className="flex-1 text-on-surface-variant hover:text-on-surface data-[state=active]:text-on-surface data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               Posts
             </TabsTrigger>
             <TabsTrigger
               value="bookmarks"
-              className="flex-1 text-gray-500 hover:text-white data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
+              className="flex-1 text-on-surface-variant hover:text-on-surface data-[state=active]:text-on-surface data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               bookmarks
             </TabsTrigger>
 
             <TabsTrigger
               value="likes"
-              className="flex-1 text-gray-500 hover:text-white data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
+              className="flex-1 text-on-surface-variant hover:text-on-surface data-[state=active]:text-on-surface data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               Likes
             </TabsTrigger>
@@ -191,7 +182,9 @@ const Profile = () => {
                 <PostCard key={post._id} post={post} fetchPosts={() => {}} />
               ))
             ) : (
-              <div className="text-gray-500 text-center py-8">No Post yet</div>
+              <div className="text-on-surface-variant text-center py-8">
+                No Post yet
+              </div>
             )}
           </TabsContent>
 
@@ -201,7 +194,7 @@ const Profile = () => {
                 <PostCard key={post._id} post={post} fetchPosts={() => {}} />
               ))
             ) : (
-              <div className="text-gray-500 text-center py-8">
+              <div className="text-on-surface-variant text-center py-8">
                 No bookmarks yet
               </div>
             )}
@@ -212,7 +205,7 @@ const Profile = () => {
                 <PostCard key={post._id} post={post} fetchPosts={() => {}} />
               ))
             ) : (
-              <div className="text-gray-500 text-center py-8">
+              <div className="text-on-surface-variant text-center py-8">
                 No bookmarks yet
               </div>
             )}
@@ -226,7 +219,7 @@ const Profile = () => {
         isOpen={!!followDialog}
         onClose={() => {
           setFollowDialog(null);
-          fetchProfile();
+          refetch();
         }}
         user={user}
       />
@@ -235,7 +228,7 @@ const Profile = () => {
         isOpen={editProfileDialog}
         onClose={() => setEditProfileDialog(false)}
         user={user}
-        refetchProfile={fetchProfile}
+        refetchProfile={refetch}
       />
     </div>
   );

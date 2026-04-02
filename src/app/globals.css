@@ -7,11 +7,9 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Set default background color to black */
 body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 ::-webkit-scrollbar {
@@ -23,16 +21,112 @@ body {
   scrollbar-width: none;
 }
 
-/* Light mode theme */
 @layer base {
   :root {
-    --bg-color: #000000;
-    --text-color: #ffffff;
+    --radius: 1rem;
+
+    --background: 214 24% 96%;
+    --foreground: 228 20% 16%;
+
+    --surface: 214 24% 96%;
+    --surface-bright: 0 0% 100%;
+    --surface-container-lowest: 0 0% 100%;
+    --surface-container-low: 220 22% 94%;
+    --surface-container: 221 20% 91%;
+    --surface-container-high: 222 20% 88%;
+    --surface-container-highest: 224 18% 84%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 228 20% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 228 20% 16%;
+
+    --primary: 245 69% 47%;
+    --primary-foreground: 0 0% 100%;
+    --primary-container: 244 78% 60%;
+    --secondary: 236 27% 47%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 233 30% 92%;
+    --accent-foreground: 228 20% 16%;
+    --muted: 228 18% 90%;
+    --muted-foreground: 224 16% 40%;
+
+    --on-surface: 228 20% 16%;
+    --on-surface-variant: 224 12% 40%;
+    --outline-variant: 229 18% 68%;
+
+    --destructive: 0 76% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 229 18% 68%;
+    --input: 228 18% 88%;
+    --ring: 245 69% 47%;
+
+    --chart-1: 245 69% 47%;
+    --chart-2: 236 43% 58%;
+    --chart-3: 268 50% 61%;
+    --chart-4: 186 45% 55%;
+    --chart-5: 22 80% 52%;
   }
 
-  /* Dark mode can still apply the same black background */
   .dark {
-    --bg-color: #000000;
-    --text-color: #ffffff;
+    --background: 228 64% 9%;
+    --foreground: 220 29% 92%;
+
+    --surface: 228 64% 9%;
+    --surface-bright: 228 52% 12%;
+    --surface-container-lowest: 228 54% 13%;
+    --surface-container-low: 228 48% 15%;
+    --surface-container: 227 43% 18%;
+    --surface-container-high: 226 36% 22%;
+    --surface-container-highest: 225 31% 28%;
+
+    --card: 228 54% 13%;
+    --card-foreground: 220 29% 92%;
+    --popover: 228 48% 15%;
+    --popover-foreground: 220 29% 92%;
+
+    --primary: 245 87% 63%;
+    --primary-foreground: 0 0% 100%;
+    --primary-container: 245 80% 71%;
+    --secondary: 234 27% 68%;
+    --secondary-foreground: 228 64% 9%;
+    --accent: 230 33% 22%;
+    --accent-foreground: 220 29% 92%;
+    --muted: 228 31% 20%;
+    --muted-foreground: 228 15% 72%;
+
+    --on-surface: 220 29% 92%;
+    --on-surface-variant: 228 15% 72%;
+    --outline-variant: 229 19% 38%;
+
+    --destructive: 0 73% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 229 19% 32%;
+    --input: 228 31% 20%;
+    --ring: 245 87% 63%;
+
+    --chart-1: 245 87% 63%;
+    --chart-2: 229 62% 68%;
+    --chart-3: 281 56% 69%;
+    --chart-4: 187 51% 58%;
+    --chart-5: 29 85% 61%;
+  }
+}
+
+@layer components {
+  .editorial-panel {
+    @apply bg-surface-container-low border border-outline-variant/20 rounded-3xl;
+  }
+
+  .ghost-border {
+    @apply border border-outline-variant/20;
+  }
+
+  .gradient-primary {
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-container)));
+  }
+
+  .glass-surface {
+    @apply bg-surface-container-low/80 backdrop-blur-xl;
   }
 }
