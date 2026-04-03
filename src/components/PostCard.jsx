@@ -69,12 +69,18 @@ const PostCard = memo(
       useDeletePostMutation();
 
     const handleLikePost = useCallback(async () => {
+      // Optimistic update
+      const previousIsLiked = isLiked;
+      setIsLiked(!previousIsLiked);
+      setLikeCount((prev) => (previousIsLiked ? prev - 1 : prev + 1));
+
       try {
         await likePost(post._id).unwrap();
-        setIsLiked((prev) => !prev);
-        setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
         handlefetchProfile(dispatch, setCredential);
       } catch (error) {
+        // Revert on failure
+        setIsLiked(previousIsLiked);
+        setLikeCount((prev) => (!previousIsLiked ? prev - 1 : prev + 1));
         const message = error?.data?.message || "Failed to update like status";
         toast.error(message);
         console.error("Error liking post:", error);
@@ -82,14 +88,21 @@ const PostCard = memo(
     }, [post._id, isLiked, likePost, dispatch]);
 
     const handleBookmarkPost = useCallback(async () => {
+      // Optimistic update
+      const previousIsBookmarked = isBookmarked;
+      setIsBookmarked(!previousIsBookmarked);
+
       try {
         await bookmarkPost(post._id).unwrap();
-        setIsBookmarked((prev) => !prev);
         handlefetchProfile(dispatch, setCredential);
         toast.success(
-          isBookmarked ? "Removed from bookmarks" : "Added to bookmarks",
+          previousIsBookmarked
+            ? "Removed from bookmarks"
+            : "Added to bookmarks",
         );
       } catch (error) {
+        // Revert on failure
+        setIsBookmarked(previousIsBookmarked);
         const message =
           error?.data?.message || "Failed to update bookmark status";
         toast.error(message);

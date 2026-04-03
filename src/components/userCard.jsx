@@ -24,13 +24,24 @@ function UserCard({ user, mobile, onClose }) {
   }, [userInfo, user]);
 
   const followBtn = async () => {
-    const newStatus = await handleFollow(
-      user._id,
-      isFollowing,
-      dispatch,
-      setCredential,
-    );
-    setIsFollowing(newStatus);
+    // Optimistic update
+    const previousFollowingState = isFollowing;
+    setIsFollowing(!previousFollowingState);
+
+    try {
+      const newStatus = await handleFollow(
+        user._id,
+        previousFollowingState,
+        dispatch,
+        setCredential,
+      );
+      // Wait, handleFollow returns the final status, but it also has its own toast error
+      // if it fails, it returns currentStatus (which we pass as previousFollowingState).
+      // So if it matches previousFollowingState, it means it failed OR that's the new reality.
+      setIsFollowing(newStatus);
+    } catch (err) {
+      setIsFollowing(previousFollowingState);
+    }
   };
 
   const getInitials = (name) => {

@@ -145,6 +145,7 @@ function Content() {
         <section className="bg-surface-container-low rounded-2xl p-5 md:p-6">
           <div className="flex gap-4">
             <img
+              suppressHydrationWarning
               className="w-11 h-11 rounded-xl object-cover"
               src={
                 userInfo?.avatar ||

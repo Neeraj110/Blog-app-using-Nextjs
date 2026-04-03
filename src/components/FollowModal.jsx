@@ -21,6 +21,9 @@ const FollowModal = ({ type, isOpen, onClose, user }) => {
       (u) => u._id === follower._id,
     );
 
+    // Optimistic UI handled internally by handleFollow for the UI (using RTK cache) but we don't have local state.
+    // The handleFollow triggers a forceRefetch of getProfile anyway, so the store updates immediately after the await.
+    // For pure optimistic in a loop, it might be slightly delayed by the await.
     await handleFollow(
       follower._id,
       isCurrentlyFollowing,

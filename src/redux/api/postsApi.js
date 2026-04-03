@@ -158,7 +158,7 @@ export const postsApi = createApi({
     likePost: builder.mutation({
       query: (postId) => ({
         url: `/post/like-post/${postId}`,
-        method: "POST",
+        method: "PUT",
       }),
       invalidatesTags: (result, error, postId) => [
         { type: "Post", id: postId },
@@ -199,7 +199,7 @@ export const postsApi = createApi({
     bookmarkPost: builder.mutation({
       query: (postId) => ({
         url: `/post/bookmark-post/${postId}`,
-        method: "POST",
+        method: "PATCH",
       }),
       invalidatesTags: (result, error, postId) => [
         { type: "Post", id: postId },

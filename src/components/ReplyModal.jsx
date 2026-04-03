@@ -25,17 +25,19 @@ const ReplyModal = ({ isOpen, onClose, post, fetchPosts }) => {
 
   // Handle posting reply
   const handlePostReply = async () => {
+    // Optimistically update character count UI or disabled state by setting loading
     setLoading(true);
     try {
       await axios.post(`/api/post/add-comment/${post._id}`, {
         comment: reply,
       });
+      // Success
       setReply("");
       fetchPosts();
       onClose();
     } catch (error) {
       console.error("Error posting reply:", error);
-    } finally {
+      // Revert loading on error
       setLoading(false);
     }
   };
